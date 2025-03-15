@@ -1,9 +1,11 @@
 package com.delighted2wins.climify.utils
 
-val permissions = arrayOf(
+val PERMISSIONS = arrayOf(
     android.Manifest.permission.ACCESS_COARSE_LOCATION,
     android.Manifest.permission.ACCESS_FINE_LOCATION,
 )
 
-const val OPEN_WEATHER_API = "341a93f001828367be426113a4a693b9"
+const val BASE_URL = "https://api.openweathermap.org/data/2.5/"
+const val API_KEY = "341a93f001828367be426113a4a693b9"
+const val RC_PERMISSION = 100
 

@@ -1,25 +1,26 @@
 package com.delighted2wins.climify.data.remote
 
-import com.delighted2wins.climify.utils.OPEN_WEATHER_API
-import com.delighted2wins.climify.model.ForecastResult
-import com.delighted2wins.climify.model.WeatherResult
+import com.delighted2wins.climify.BuildConfig
+import com.delighted2wins.climify.data.model.CurrentWeatherResponse
+import com.delighted2wins.climify.data.model.UpcomingForecastResponse
+import com.delighted2wins.climify.utils.API_KEY
 import retrofit2.http.GET
 import retrofit2.http.Query
 
 interface WeatherService {
     @GET("weather")
-    suspend fun getWeather(
+    suspend fun getCurrentWeather(
         @Query("lat") lat: Double,
         @Query("lon") lon: Double,
-        @Query("units") units: String = "metric",
-        @Query("appid") appid: String = OPEN_WEATHER_API
-    ): WeatherResult
+        @Query("units") units: String,
+        @Query("appid") appid: String = BuildConfig.ApiKey
+    ): CurrentWeatherResponse
 
     @GET("forecast")
-    suspend fun getForecast(
+    suspend fun getUpcomingForecast(
         @Query("lat") lat: Double,
         @Query("lon") lon: Double,
-        @Query("units") units: String = "metric",
-        @Query("appid") appid: String = OPEN_WEATHER_API
-    ): ForecastResult
+        @Query("units") units: String,
+        @Query("appid") appid: String = BuildConfig.ApiKey
+    ): UpcomingForecastResponse
 }
