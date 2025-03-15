@@ -4,8 +4,6 @@ import com.delighted2wins.climify.data.model.CurrentWeatherResponse
 import com.delighted2wins.climify.data.model.UpcomingForecastResponse
 import com.delighted2wins.climify.model.CurrentWeather
 import com.delighted2wins.climify.model.ForecastWeather
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 fun CurrentWeatherResponse.toCurrentWeather(): CurrentWeather {
     return CurrentWeather(
@@ -18,7 +16,7 @@ fun CurrentWeatherResponse.toCurrentWeather(): CurrentWeather {
         tempMin = main?.tempMin ?: 0.0,
         tempMax = main?.tempMax ?: 0.0,
         pressure = if (main?.pressure != null) "${main?.pressure} hPa" else "0 hPa",
-        humidity =if (main?.humidity != null) "${main?.humidity} %" else "0 %",
+        humidity = if (main?.humidity != null) "${main?.humidity} %" else "0 %",
         windSpeed = wind?.speed ?: 0.0,
         cloud = if (clouds?.all != null) "${clouds?.all} %" else "0 %",
         description = weather[0].description ?: ""
