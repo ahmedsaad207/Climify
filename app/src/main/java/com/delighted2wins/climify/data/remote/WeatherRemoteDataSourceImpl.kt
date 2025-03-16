@@ -2,6 +2,7 @@ package com.delighted2wins.climify.data.remote
 
 import com.delighted2wins.climify.data.model.CurrentWeatherResponse
 import com.delighted2wins.climify.data.model.UpcomingForecastResponse
+import com.delighted2wins.climify.model.State
 
 class WeatherRemoteDataSourceImpl(private val service: WeatherService) : WeatherRemoteDataSource {
 
@@ -19,6 +20,13 @@ class WeatherRemoteDataSourceImpl(private val service: WeatherService) : Weather
         units: String
     ): UpcomingForecastResponse {
         return service.getUpcomingForecast(lat, lon, units)
+    }
+
+    override suspend fun getStateNameFromLocation(
+        lat: Double,
+        lon: Double,
+    ): List<State> {
+        return service.getStateNameFromLocation(lat, lon)
     }
 
 }

@@ -40,7 +40,7 @@ fun HomeUi(
 //    innerPadding: PaddingValues, viewModel: WeatherViewModel
 ) {
     val viewModel:HomeViewModel =  viewModel(
-        factory = WeatherViewModelFactory(
+        factory = HomeViewModelFactory(
             WeatherRepositoryImpl(
                 WeatherRemoteDataSourceImpl(RetrofitClient.service)
             )
