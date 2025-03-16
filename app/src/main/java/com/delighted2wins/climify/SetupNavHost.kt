@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.delighted2wins.climify.home.HomeUi
+import com.delighted2wins.climify.locationselection.LocationSelectionUI
 
 //    snackBarHostState: SnackbarHostState,
 //    titleState: MutableState<String>
@@ -26,11 +27,15 @@ fun SetupNavHost(
         }
 
         composable<Screen.Alarm> {
-            FavoriteUI()
+
         }
 
         composable<Screen.Settings> {
-            FavoriteUI()
+            LocationSelectionUI()
+        }
+
+        composable<Screen.LocationSelection> {
+            LocationSelectionUI()
         }
 
     }

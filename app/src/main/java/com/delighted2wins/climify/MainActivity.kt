@@ -48,7 +48,8 @@ class MainActivity : ComponentActivity() {
                     BottomAppBar(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
+//                            .height(48.dp),
+                            .wrapContentHeight(),
                         containerColor = Color.Transparent
                     ) {
                         BottomNavigationBar(navController)
@@ -66,7 +67,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun BottomNavigationBar(navController: NavHostController) {
-    val selectedNavigationIndex = rememberSaveable() { mutableIntStateOf(0) }
+    val selectedNavigationIndex = rememberSaveable { mutableIntStateOf(0) }
     val navigationBottomItems = listOf(
         NavigationItem(Icons.Filled.Home, Screen.Home),
         NavigationItem(Icons.Filled.Favorite, Screen.Favorite),

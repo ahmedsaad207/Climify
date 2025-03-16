@@ -4,7 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DIALOG" />
-        <DropdownSelection timestamp="2025-03-16T01:12:28.550980200Z">
+        <DropdownSelection timestamp="2025-03-16T20:14:17.819421400Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\medos\.android\avd\Medium_Phone.avd" />
@@ -15,7 +15,7 @@
           <targets>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CR82K1PQT" />
+                <DeviceId pluginId="Default" identifier="serial=192.168.1.5:38635;connection=e9e1bfc0" />
               </handle>
             </Target>
             <Target type="DEFAULT_BOOT">
