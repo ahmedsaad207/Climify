@@ -16,7 +16,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
-class WeatherViewModel(private val repository: WeatherRepository) : ViewModel() {
+class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
 
     private val _currentWeatherLiveData = MutableLiveData<CurrentWeather>()
     val currentWeatherLiveData: LiveData<CurrentWeather> = _currentWeatherLiveData
