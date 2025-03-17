@@ -25,9 +25,15 @@ interface WeatherService {
     ): UpcomingForecastResponse
 
     @GET("geo/1.0/reverse")
-    suspend fun getStateNameFromLocation(
+    suspend fun getStateInfoByLocation(
         @Query("lat") lat: Double,
         @Query("lon") lon: Double,
+        @Query("appid") appid: String = BuildConfig.ApiKey
+    ): List<State>
+
+    @GET("geo/1.0/direct")
+    suspend fun getLocationByQuery(
+        @Query("q") query: String,
         @Query("appid") appid: String = BuildConfig.ApiKey
     ): List<State>
 }

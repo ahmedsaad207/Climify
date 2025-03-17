@@ -22,11 +22,15 @@ class WeatherRemoteDataSourceImpl(private val service: WeatherService) : Weather
         return service.getUpcomingForecast(lat, lon, units)
     }
 
-    override suspend fun getStateNameFromLocation(
+    override suspend fun getStateInfoByLocation(
         lat: Double,
         lon: Double,
     ): List<State> {
-        return service.getStateNameFromLocation(lat, lon)
+        return service.getStateInfoByLocation(lat, lon)
+    }
+
+    override suspend fun getLocationByQuery(query: String): List<State> {
+        return service.getLocationByQuery(query)
     }
 
 }
