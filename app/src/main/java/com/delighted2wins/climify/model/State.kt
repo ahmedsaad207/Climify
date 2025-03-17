@@ -9,5 +9,4 @@ data class State(
     @SerializedName("lon") var lon: Double? = null,
     @SerializedName("country") var country: String? = null,
     @SerializedName("state") var state: String? = null
-
 )

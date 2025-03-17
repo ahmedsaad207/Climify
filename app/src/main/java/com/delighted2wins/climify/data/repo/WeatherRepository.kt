@@ -13,8 +13,12 @@ interface WeatherRepository {
         units: String
     ): UpcomingForecastResponse
 
-    suspend fun getStateNameFromLocation(
+    suspend fun getStateInfoByLocation(
         lat: Double,
         lon: Double,
+    ): List<State>
+
+    suspend fun getLocationByQuery(
+        query: String
     ): List<State>
 }

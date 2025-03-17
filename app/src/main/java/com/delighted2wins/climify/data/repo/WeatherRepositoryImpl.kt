@@ -22,8 +22,12 @@ class WeatherRepositoryImpl(private val remote: WeatherRemoteDataSource) : Weath
         return remote.getUpcomingForecast(lat, lon, units)
     }
 
-    override suspend fun getStateNameFromLocation(lat: Double, lon: Double): List<State> {
-        return remote.getStateNameFromLocation(lat, lon)
+    override suspend fun getStateInfoByLocation(lat: Double, lon: Double): List<State> {
+        return remote.getStateInfoByLocation(lat, lon)
+    }
+
+    override suspend fun getLocationByQuery(query: String): List<State> {
+        return remote.getLocationByQuery(query)
     }
 
 }
