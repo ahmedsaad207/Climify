@@ -88,6 +88,6 @@ dependencies {
     implementation("com.google.maps.android:maps-compose:4.4.1")
 
     // Places
-//    implementation("com.google.android.libraries.places:places-ktx:2.7.0")
+    implementation("com.google.maps.android:places-compose:0.1.2")
 
 }

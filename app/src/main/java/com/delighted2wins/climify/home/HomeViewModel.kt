@@ -31,10 +31,10 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
     private var weather: ForecastWeather? = null
 
     init {
-        getCurrentWeather()
+        //getCurrentWeather()
     }
 
-    private fun getCurrentWeather(
+     fun getCurrentWeather(
         lat: Double = 10.7946,
         lon: Double = 106.5348,
         units: String = "metric"

@@ -14,7 +14,9 @@ import com.google.android.libraries.places.api.net.PlacesClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 class LocationSelectionViewModel(
     private val repository: WeatherRepository,
@@ -27,10 +29,9 @@ class LocationSelectionViewModel(
 
     var predictions = MutableStateFlow<List<AutocompletePrediction>>(emptyList())
 
-
     init {
         viewModelScope.launch {
-            query.collect { searchQuery ->
+            query.debounce(500.milliseconds).collect { searchQuery ->
                 if (searchQuery.isNotBlank()) {
 
                     val request =

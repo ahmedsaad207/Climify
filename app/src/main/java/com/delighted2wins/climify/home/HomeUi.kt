@@ -2,6 +2,8 @@
 
 package com.delighted2wins.climify.home
 
+import android.content.Context
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,6 +26,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,7 +40,7 @@ import com.delighted2wins.climify.utils.timeStampToHumanDate
 
 @Composable
 fun HomeUi(
-//    innerPadding: PaddingValues, viewModel: WeatherViewModel
+    onNavigateToLocationSelection: () -> Unit
 ) {
     val viewModel:HomeViewModel =  viewModel(
         factory = HomeViewModelFactory(
@@ -46,6 +49,12 @@ fun HomeUi(
             )
         )
     )
+    val context = LocalContext.current
+    val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+    val lat = sharedPreferences.getString("lat", "0.0") ?: "0.0"
+    val lon = sharedPreferences.getString("lon", "0.0") ?: "0.0"
+
+    viewModel.getCurrentWeather(lat.toDouble(), lon.toDouble())
     val currentWeatherState = viewModel.currentWeatherLiveData.observeAsState()
     val hourlyForecastWeatherListState = viewModel.hourlyForecastWeatherList.observeAsState()
     val upcomingDaysForecastWeatherListState =
@@ -60,14 +69,15 @@ fun HomeUi(
     ) {
 
         // City
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 24.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-
-            Row {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 24.dp)
+                    .clickable {
+                        onNavigateToLocationSelection()
+                    },
+                verticalAlignment = Alignment.Top
+            ) {
                 Icon(
                     Icons.Default.LocationOn,
                     contentDescription = null,
@@ -81,13 +91,6 @@ fun HomeUi(
                 )
                 Icon(Icons.Default.ArrowDropDown, contentDescription = null)
             }
-            Spacer(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            )
-
-        }
 
         // Time & Date
         Row(modifier = Modifier.fillMaxWidth().padding(24.dp),
