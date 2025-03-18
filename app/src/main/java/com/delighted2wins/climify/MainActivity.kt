@@ -53,7 +53,6 @@ class MainActivity : ComponentActivity() {
                     BottomAppBar(
                         modifier = Modifier
                             .fillMaxWidth()
-//                            .height(48.dp),
                             .wrapContentHeight(),
                         containerColor = Color.Transparent
                     ) {

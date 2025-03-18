@@ -19,7 +19,7 @@ fun SetupNavHost(
         startDestination = Screen.Home
     ) {
         composable<Screen.Home> {
-            HomeUi()
+            HomeUi{navController.navigate(Screen.LocationSelection)}
         }
 
         composable<Screen.Favorite> {
@@ -31,11 +31,11 @@ fun SetupNavHost(
         }
 
         composable<Screen.Settings> {
-            LocationSelectionUI()
+
         }
 
         composable<Screen.LocationSelection> {
-            LocationSelectionUI()
+            LocationSelectionUI {navController.navigateUp()}
         }
 
     }
