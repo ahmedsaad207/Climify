@@ -42,10 +42,8 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val weatherResponse = repository.getCurrentWeather(lat, lon, units)
-                Log.e("TAG", "cod: ${weatherResponse.cod}")
                 if ((weatherResponse.cod ?: 0) == 200) {
                     val currentWeather = weatherResponse.toCurrentWeather()
-                    Log.e("TAG", "currentWeather: $currentWeather")
                     _currentWeatherLiveData.postValue(currentWeather)
 
                         weather = ForecastWeather(
@@ -91,7 +89,7 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
                         val dateAndTime = weather.dateText.split(" ")
                         if (dateAndTime.contains(formattedCurrentDate)) {
                             hourlyList.add(weather)
-                        } else {
+                        } else { // days
                             if (weather.dateText.substring(11, 16) == "12:00") {
                                 daysList.add(weather)
                             }

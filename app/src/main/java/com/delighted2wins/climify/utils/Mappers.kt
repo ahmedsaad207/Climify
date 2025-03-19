@@ -19,7 +19,9 @@ fun CurrentWeatherResponse.toCurrentWeather(): CurrentWeather {
         humidity = if (main?.humidity != null) "${main?.humidity} %" else "0 %",
         windSpeed = wind?.speed ?: 0.0,
         cloud = if (clouds?.all != null) "${clouds?.all} %" else "0 %",
-        description = weather[0].description ?: ""
+        description = weather[0].description ?: "",
+        lat = coord?.lat ?: 0.0,
+        long = coord?.lon ?: 0.0
     )
 }
 

@@ -7,6 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.delighted2wins.climify.data.repo.WeatherRepository
 import com.delighted2wins.climify.model.State
+import com.delighted2wins.climify.utils.toCurrentWeather
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.AutocompletePrediction
 import com.google.android.libraries.places.api.model.PlaceTypes
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
@@ -68,5 +70,23 @@ class LocationSelectionViewModel(
         return repository.getLocationByQuery(query)[0]
     }
 
+    fun insertWeather(latLng: LatLng) {
+        viewModelScope.launch {
+            try {
+                val currentWeather =
+                    repository.getCurrentWeather(latLng.latitude, latLng.longitude, "metric")
+                        .toCurrentWeather()
+
+                val isInserted = repository.insertWeather(currentWeather)
+
+                if (isInserted > 0) Log.i("TAG", "insertWeather: currentWeather: inserted") //TODO
+                else Log.i("TAG", "insertWeather: isInserted: inserted") // TODO
+
+            } catch (e: Exception) {
+                // TODO
+            }
+
+        }
+    }
 
 }

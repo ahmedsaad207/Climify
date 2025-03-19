@@ -24,10 +24,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.delighted2wins.climify.data.local.WeatherDatabase
+import com.delighted2wins.climify.data.local.WeathersLocalDataSourceImpl
 import com.delighted2wins.climify.data.remote.RetrofitClient
 import com.delighted2wins.climify.data.remote.WeatherRemoteDataSourceImpl
 import com.delighted2wins.climify.data.repo.WeatherRepositoryImpl
@@ -57,7 +58,10 @@ fun LocationSelectionUI(onNavigateToHome: () -> Unit) {
     val viewModel: LocationSelectionViewModel = viewModel(
         factory = LocationSelectionViewModelFactory(
             WeatherRepositoryImpl(
-                WeatherRemoteDataSourceImpl(RetrofitClient.service)
+                WeatherRemoteDataSourceImpl(RetrofitClient.service),
+                WeathersLocalDataSourceImpl(
+                    WeatherDatabase.getInstance(context.applicationContext).getWeatherDao()
+                )
             ),
             placesClient
         )
@@ -162,6 +166,12 @@ fun LocationSelectionUI(onNavigateToHome: () -> Unit) {
             Text(text = currentLocation.value?.country ?: "", color = Color.White)
             Text(text = currentLocation.value?.state ?: "", color = Color.White)
             Button(onClick = {
+                viewModel.insertWeather(
+                    LatLng(
+                        currentLocation.value?.lat ?: 0.0,
+                        currentLocation.value?.lon ?: 0.0
+                    )
+                )
                 onNavigateToHome()
                 val lat = currentLocation.value?.lat ?: 0.0
                 val lon = currentLocation.value?.lon ?: 0.0
