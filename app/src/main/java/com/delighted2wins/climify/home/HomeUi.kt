@@ -7,7 +7,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -33,6 +32,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.delighted2wins.climify.data.local.WeatherDatabase
+import com.delighted2wins.climify.data.local.WeathersLocalDataSourceImpl
 import com.delighted2wins.climify.data.remote.RetrofitClient
 import com.delighted2wins.climify.data.remote.WeatherRemoteDataSourceImpl
 import com.delighted2wins.climify.data.repo.WeatherRepositoryImpl
@@ -42,14 +43,17 @@ import com.delighted2wins.climify.utils.timeStampToHumanDate
 fun HomeUi(
     onNavigateToLocationSelection: () -> Unit
 ) {
-    val viewModel:HomeViewModel =  viewModel(
+    val context = LocalContext.current
+    val viewModel: HomeViewModel = viewModel(
         factory = HomeViewModelFactory(
             WeatherRepositoryImpl(
-                WeatherRemoteDataSourceImpl(RetrofitClient.service)
+                WeatherRemoteDataSourceImpl(RetrofitClient.service),
+                WeathersLocalDataSourceImpl(
+                    WeatherDatabase.getInstance(context.applicationContext).getWeatherDao()
+                )
             )
         )
     )
-    val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
     val lat = sharedPreferences.getString("lat", "0.0") ?: "0.0"
     val lon = sharedPreferences.getString("lon", "0.0") ?: "0.0"
@@ -60,7 +64,6 @@ fun HomeUi(
     val upcomingDaysForecastWeatherListState =
         viewModel.upcomingDaysForecastWeatherList.observeAsState()
 
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -69,32 +72,36 @@ fun HomeUi(
     ) {
 
         // City
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 24.dp)
-                    .clickable {
-                        onNavigateToLocationSelection()
-                    },
-                verticalAlignment = Alignment.Top
-            ) {
-                Icon(
-                    Icons.Default.LocationOn,
-                    contentDescription = null,
-                    modifier = Modifier.padding(start = 16.dp, end = 4.dp)
-                )
-                Text(
-                    text = currentWeatherState.value?.city ?: "",
-                    fontSize = 20.sp,
-                    modifier = Modifier.wrapContentWidth(),
-                    fontWeight = FontWeight.Medium
-                )
-                Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-            }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 24.dp)
+                .clickable {
+                    onNavigateToLocationSelection()
+                },
+            verticalAlignment = Alignment.Top
+        ) {
+            Icon(
+                Icons.Default.LocationOn,
+                contentDescription = null,
+                modifier = Modifier.padding(start = 16.dp, end = 4.dp)
+            )
+            Text(
+                text = currentWeatherState.value?.city ?: "",
+                fontSize = 20.sp,
+                modifier = Modifier.wrapContentWidth(),
+                fontWeight = FontWeight.Medium
+            )
+            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+        }
 
         // Time & Date
-        Row(modifier = Modifier.fillMaxWidth().padding(24.dp),
-            verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
                 text = currentWeatherState.value?.timeText ?: "", fontSize = 32.sp,
                 modifier = Modifier

@@ -17,4 +17,7 @@ sealed class Screen {
 
     @Serializable
     data object LocationSelection : Screen()
+
+    @Serializable
+    data object Details : Screen()
 }
