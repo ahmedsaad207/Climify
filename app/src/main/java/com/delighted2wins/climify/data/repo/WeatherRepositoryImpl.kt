@@ -4,8 +4,8 @@ import com.delighted2wins.climify.data.local.WeathersLocalDataSource
 import com.delighted2wins.climify.data.remote.WeatherRemoteDataSource
 import com.delighted2wins.climify.data.model.CurrentWeatherResponse
 import com.delighted2wins.climify.data.model.UpcomingForecastResponse
-import com.delighted2wins.climify.model.CurrentWeather
-import com.delighted2wins.climify.model.State
+import com.delighted2wins.climify.domainmodel.CurrentWeather
+import com.delighted2wins.climify.domainmodel.State
 import kotlinx.coroutines.flow.Flow
 
 class WeatherRepositoryImpl(
@@ -15,9 +15,10 @@ class WeatherRepositoryImpl(
     override suspend fun getCurrentWeather(
         lat: Double,
         lon: Double,
-        units: String
+        units: String,
+        lang: String
     ): CurrentWeatherResponse {
-        return remote.getCurrentWeather(lat, lon, units)
+        return remote.getCurrentWeather(lat, lon, units, lang)
     }
 
     override suspend fun getUpcomingForecast(

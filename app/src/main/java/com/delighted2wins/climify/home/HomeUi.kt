@@ -37,6 +37,7 @@ import com.delighted2wins.climify.data.local.WeathersLocalDataSourceImpl
 import com.delighted2wins.climify.data.remote.RetrofitClient
 import com.delighted2wins.climify.data.remote.WeatherRemoteDataSourceImpl
 import com.delighted2wins.climify.data.repo.WeatherRepositoryImpl
+import com.delighted2wins.climify.utils.SP_NAME
 import com.delighted2wins.climify.utils.timeStampToHumanDate
 
 @Composable
@@ -54,11 +55,13 @@ fun HomeUi(
             )
         )
     )
-    val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+    val sharedPreferences = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
     val lat = sharedPreferences.getString("lat", "0.0") ?: "0.0"
     val lon = sharedPreferences.getString("lon", "0.0") ?: "0.0"
+    val lang = sharedPreferences.getString("lang", "en") ?: "en"
+    val tempUnit = sharedPreferences.getString("temp", "metric")?: "metric"
 
-    viewModel.getCurrentWeather(lat.toDouble(), lon.toDouble())
+    viewModel.getCurrentWeather(lat.toDouble(), lon.toDouble(), tempUnit, lang)
     val currentWeatherState = viewModel.currentWeatherLiveData.observeAsState()
     val hourlyForecastWeatherListState = viewModel.hourlyForecastWeatherList.observeAsState()
     val upcomingDaysForecastWeatherListState =

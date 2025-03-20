@@ -6,7 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.delighted2wins.climify.data.repo.WeatherRepository
-import com.delighted2wins.climify.model.State
+import com.delighted2wins.climify.domainmodel.State
 import com.delighted2wins.climify.utils.toCurrentWeather
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.AutocompletePrediction
@@ -74,7 +74,7 @@ class LocationSelectionViewModel(
         viewModelScope.launch {
             try {
                 val currentWeather =
-                    repository.getCurrentWeather(latLng.latitude, latLng.longitude, "metric")
+                    repository.getCurrentWeather(latLng.latitude, latLng.longitude, "metric", "en")
                         .toCurrentWeather()
 
                 val isInserted = repository.insertWeather(currentWeather)

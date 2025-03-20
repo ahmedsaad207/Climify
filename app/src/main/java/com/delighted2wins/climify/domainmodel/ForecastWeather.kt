@@ -1,4 +1,4 @@
-package com.delighted2wins.climify.model
+package com.delighted2wins.climify.domainmodel
 
 data class ForecastWeather(
     var date: Int,
