@@ -6,5 +6,6 @@ package com.delighted2wins.climify.utils
 //)
 
 const val BASE_URL = "https://api.openweathermap.org/"
+const val SP_NAME = "settings"
 //const val RC_PERMISSION = 100
 

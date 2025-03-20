@@ -1,6 +1,6 @@
 package com.delighted2wins.climify.data.local
 
-import com.delighted2wins.climify.model.CurrentWeather
+import com.delighted2wins.climify.domainmodel.CurrentWeather
 import kotlinx.coroutines.flow.Flow
 
 class WeathersLocalDataSourceImpl(private val dao: WeatherDao) : WeathersLocalDataSource {

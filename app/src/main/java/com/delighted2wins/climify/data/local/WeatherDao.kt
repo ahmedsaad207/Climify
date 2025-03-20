@@ -4,7 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.delighted2wins.climify.model.CurrentWeather
+import com.delighted2wins.climify.domainmodel.CurrentWeather
 import kotlinx.coroutines.flow.Flow
 
 @Dao

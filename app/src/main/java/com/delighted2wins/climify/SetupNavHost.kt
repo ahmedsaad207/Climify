@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import com.delighted2wins.climify.favorite.FavoriteUI
 import com.delighted2wins.climify.home.HomeUi
 import com.delighted2wins.climify.locationselection.LocationSelectionUI
+import com.delighted2wins.climify.settings.SettingsUI
 import com.delighted2wins.climify.weatherdetails.DetailsUI
 
 //    snackBarHostState: SnackbarHostState,
@@ -39,7 +40,7 @@ fun SetupNavHost(
         }
 
         composable<Screen.Settings> {
-
+            SettingsUI{navController.navigate(Screen.LocationSelection)}
         }
 
         composable<Screen.Details> {

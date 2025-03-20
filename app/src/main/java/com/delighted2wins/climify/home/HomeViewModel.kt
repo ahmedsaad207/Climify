@@ -6,8 +6,8 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.delighted2wins.climify.data.repo.WeatherRepository
-import com.delighted2wins.climify.model.CurrentWeather
-import com.delighted2wins.climify.model.ForecastWeather
+import com.delighted2wins.climify.domainmodel.CurrentWeather
+import com.delighted2wins.climify.domainmodel.ForecastWeather
 import com.delighted2wins.climify.utils.toCurrentWeather
 import com.delighted2wins.climify.utils.toForecastWeatherList
 import kotlinx.coroutines.Dispatchers
@@ -37,11 +37,12 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
      fun getCurrentWeather(
         lat: Double = 10.7946,
         lon: Double = 106.5348,
-        units: String = "metric"
+        units: String = "metric",
+        lang: String = "en"
     ) =
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val weatherResponse = repository.getCurrentWeather(lat, lon, units)
+                val weatherResponse = repository.getCurrentWeather(lat, lon, units, lang)
                 if ((weatherResponse.cod ?: 0) == 200) {
                     val currentWeather = weatherResponse.toCurrentWeather()
                     _currentWeatherLiveData.postValue(currentWeather)

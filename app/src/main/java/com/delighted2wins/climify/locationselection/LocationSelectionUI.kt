@@ -32,6 +32,7 @@ import com.delighted2wins.climify.data.local.WeathersLocalDataSourceImpl
 import com.delighted2wins.climify.data.remote.RetrofitClient
 import com.delighted2wins.climify.data.remote.WeatherRemoteDataSourceImpl
 import com.delighted2wins.climify.data.repo.WeatherRepositoryImpl
+import com.delighted2wins.climify.utils.SP_NAME
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -52,7 +53,7 @@ import kotlinx.coroutines.withContext
 fun LocationSelectionUI(onNavigateToHome: () -> Unit) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+    val sharedPreferences = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
 
     val placesClient: PlacesClient = Places.createClient(context.applicationContext)
     val viewModel: LocationSelectionViewModel = viewModel(
