@@ -4,7 +4,7 @@ data class ForecastWeather(
     var date: Int,
     var time: String,
     var dateText: String,
-    var icon: String,
+    var icon: Int,
     var temp: Double,
     var tempMin: Double,
     val tempMax: Double,

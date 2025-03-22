@@ -14,6 +14,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +34,7 @@ import com.delighted2wins.climify.data.remote.RetrofitClient
 import com.delighted2wins.climify.data.remote.WeatherRemoteDataSourceImpl
 import com.delighted2wins.climify.data.repo.WeatherRepositoryImpl
 import com.delighted2wins.climify.utils.SP_NAME
+import com.delighted2wins.climify.utils.getCountryNameFromCode
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -50,7 +52,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun LocationSelectionUI(onNavigateToHome: () -> Unit) {
+fun LocationSelectionUI(showBottomNabBar: MutableState<Boolean>, onNavigateToHome: () -> Unit) {
+    showBottomNabBar.value = false
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
@@ -164,7 +167,8 @@ fun LocationSelectionUI(onNavigateToHome: () -> Unit) {
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = currentLocation.value?.country ?: "", color = Color.White)
+            Text(text = currentLocation.value?.country?.let { getCountryNameFromCode(it) } ?: "",
+                color = Color.White)
             Text(text = currentLocation.value?.state ?: "", color = Color.White)
             Button(onClick = {
                 viewModel.insertWeather(

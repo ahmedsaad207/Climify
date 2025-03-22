@@ -18,19 +18,20 @@ import com.delighted2wins.climify.weatherdetails.DetailsUI
 fun SetupNavHost(
     navController: NavHostController,
     showFloatingActionButton: MutableState<Boolean>,
+    showBottomNabBar: MutableState<Boolean>,
 ) {
     NavHost(
         navController = navController,
         startDestination = Screen.Home
     ) {
         composable<Screen.Home> {
-            HomeUi{
+            HomeUi(showBottomNabBar){
                 navController.navigate(Screen.LocationSelection)
             }
         }
 
         composable<Screen.Favorite> {
-            FavoriteUI {
+            FavoriteUI(showBottomNabBar) {
                 navController.navigate(Screen.Details)
             }
         }
@@ -48,7 +49,7 @@ fun SetupNavHost(
         }
 
         composable<Screen.LocationSelection> {
-            LocationSelectionUI {
+            LocationSelectionUI(showBottomNabBar) {
                 navController.navigateUp()
                 showFloatingActionButton.value = true
             }

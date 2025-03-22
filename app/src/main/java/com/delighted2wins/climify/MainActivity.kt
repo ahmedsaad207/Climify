@@ -17,11 +17,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.AlarmOn
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.rounded.Alarm
+import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -53,16 +60,19 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val showFloatingActionButton = remember { mutableStateOf(false) }
+            val showBottomNabBar = remember { mutableStateOf(true) }
             val navController = rememberNavController()
             Scaffold(
                 bottomBar = {
-                    BottomAppBar(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight(),
-                        containerColor = Color.Transparent
-                    ) {
-                        BottomNavigationBar(navController, showFloatingActionButton)
+                    if (showBottomNabBar.value) {
+                        BottomAppBar(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentHeight(),
+                            containerColor = Color(0xff151513)
+                        ) {
+                            BottomNavigationBar(navController, showFloatingActionButton)
+                        }
                     }
                 },
                 floatingActionButton = {
@@ -76,8 +86,10 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             ) { innerPadding ->
-                Box(modifier = Modifier.padding(innerPadding)) {
-                    SetupNavHost(navController, showFloatingActionButton)
+                Box(
+                    modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+                ) {
+                    SetupNavHost(navController, showFloatingActionButton, showBottomNabBar)
                 }
             }
 
@@ -86,13 +98,16 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun BottomNavigationBar(navController: NavHostController, showFloatingActionButton: MutableState<Boolean>) {
+fun BottomNavigationBar(
+    navController: NavHostController,
+    showFloatingActionButton: MutableState<Boolean>
+) {
     val selectedNavigationIndex = rememberSaveable { mutableIntStateOf(0) }
     val navigationBottomItems = listOf(
-        NavigationItem(Icons.Filled.Home, Screen.Home),
-        NavigationItem(Icons.Filled.Favorite, Screen.Favorite),
-        NavigationItem(Icons.Filled.Notifications, Screen.Alarm),
-        NavigationItem(Icons.Filled.Settings, Screen.Settings)
+        NavigationItem(Icons.Rounded.Home, Screen.Home),
+        NavigationItem(Icons.Rounded.FavoriteBorder, Screen.Favorite),
+        NavigationItem(Icons.Rounded.Alarm, Screen.Alarm),
+        NavigationItem(Icons.Rounded.Settings, Screen.Settings)
     )
 
     Row(Modifier.zIndex(1f)) {
