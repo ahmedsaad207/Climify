@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 
 class WeatherRepositoryImpl(
     private val remote: WeatherRemoteDataSource,
-    private val local: WeathersLocalDataSource,
+    private val local: WeathersLocalDataSource
     ) : WeatherRepository {
     override suspend fun getCurrentWeather(
         lat: Double,

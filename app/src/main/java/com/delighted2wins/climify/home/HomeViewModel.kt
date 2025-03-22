@@ -1,16 +1,15 @@
 package com.delighted2wins.climify.home
 
-import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.delighted2wins.climify.Response
 import com.delighted2wins.climify.data.repo.WeatherRepository
 import com.delighted2wins.climify.domainmodel.CurrentWeather
 import com.delighted2wins.climify.domainmodel.ForecastWeather
 import com.delighted2wins.climify.utils.toCurrentWeather
 import com.delighted2wins.climify.utils.toForecastWeatherList
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -18,91 +17,97 @@ import java.util.Locale
 
 class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
 
-    private val _currentWeatherLiveData = MutableLiveData<CurrentWeather>()
-    val currentWeatherLiveData: LiveData<CurrentWeather> = _currentWeatherLiveData
+    private val _uiState =
+        MutableStateFlow<Response<Triple<CurrentWeather?, List<ForecastWeather>, List<ForecastWeather>>>>(
+            Response.Loading
+        )
+    val uiState = _uiState.asStateFlow()
 
-    private val _hourlyForecastWeatherList = MutableLiveData<List<ForecastWeather>>()
-    val hourlyForecastWeatherList: LiveData<List<ForecastWeather>> = _hourlyForecastWeatherList
+    private val forecastHours = mutableListOf<ForecastWeather>()
+    private val forecastDays = mutableListOf<ForecastWeather>()
+    private var currentHour: ForecastWeather? = null
 
-    private val _upcomingDaysForecastWeatherList = MutableLiveData<List<ForecastWeather>>()
-    val upcomingDaysForecastWeatherList: LiveData<List<ForecastWeather>> =
-        _upcomingDaysForecastWeatherList
-
-    private var weather: ForecastWeather? = null
-
-    init {
-        //getCurrentWeather()
-    }
-
-     fun getCurrentWeather(
+    private suspend fun getCurrentWeather(
         lat: Double = 10.7946,
         lon: Double = 106.5348,
         units: String = "metric",
         lang: String = "en"
-    ) =
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val weatherResponse = repository.getCurrentWeather(lat, lon, units, lang)
-                if ((weatherResponse.cod ?: 0) == 200) {
-                    val currentWeather = weatherResponse.toCurrentWeather()
-                    _currentWeatherLiveData.postValue(currentWeather)
+    ): CurrentWeather? {
+        val weatherResponse = repository.getCurrentWeather(lat, lon, units, lang)
+        if ((weatherResponse.cod ?: 0) == 200) {
+            val currentWeather = weatherResponse.toCurrentWeather()
 
-                        weather = ForecastWeather(
-                            dateText = "",
-                            time = "Now",
-                            date = currentWeather.dt,
-                            icon = currentWeather.icon,
-                            temp = currentWeather.temp,
-                            tempMin = currentWeather.tempMin,
-                            tempMax = currentWeather.tempMax,
-                            description = currentWeather.description
-                        )
-                    getUpcomingForecast()
-                }
-            } catch (e: Exception) {
-                Log.e("TAG", "getCurrentWeather: ${e.message}")
-            }
+            currentHour = ForecastWeather(
+                dateText = "",
+                time = "Now",
+                date = currentWeather.dt,
+                icon = currentWeather.icon,
+                temp = currentWeather.temp,
+                tempMin = currentWeather.tempMin,
+                tempMax = currentWeather.tempMax,
+                description = currentWeather.description
+            )
+            return currentWeather
         }
+        return null
+    }
 
-    private fun getUpcomingForecast(
+    private suspend fun getUpcomingForecast(
         lat: Double = 10.7946,
         lon: Double = 106.5348,
-        units: String = "metric"
-    ) =
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val upcomingForecastResponse = repository.getUpcomingForecast(lat, lon, units)
-                if ((upcomingForecastResponse.cod ?: 0) == 200) {
-                    val forecastWeatherList = upcomingForecastResponse.toForecastWeatherList()
-                    val hourlyList = mutableListOf<ForecastWeather>()
-                    val daysList = mutableListOf<ForecastWeather>()
+        units: String = "metric",
+    ) {
+        val upcomingForecastResponse = repository.getUpcomingForecast(lat, lon, units)
+        if ((upcomingForecastResponse.cod ?: 0) == 200) {
+            val forecastWeatherList = upcomingForecastResponse.toForecastWeatherList()
+            val hourlyList = mutableListOf<ForecastWeather>()
+            val daysList = mutableListOf<ForecastWeather>()
 
-                    if (weather != null) {
-                        hourlyList.add(weather!!)
+            if (currentHour != null) {
+                hourlyList.add(currentHour!!)
+            }
+
+            val calendar = Calendar.getInstance()
+            val currentDate = calendar.time
+            val formattedCurrentDate =
+                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(currentDate)
+
+            forecastWeatherList.forEach { weather ->
+                val dateAndTime = weather.dateText.split(" ")
+                if (dateAndTime.contains(formattedCurrentDate)) {
+                    hourlyList.add(weather)
+                } else { // days
+                    if (weather.dateText.substring(11, 16) == "12:00") {
+                        daysList.add(weather)
                     }
-
-                    val calendar = Calendar.getInstance()
-                    val currentDate = calendar.time
-                    val formattedCurrentDate =
-                        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(currentDate)
-
-                    forecastWeatherList.forEach { weather ->
-                        val dateAndTime = weather.dateText.split(" ")
-                        if (dateAndTime.contains(formattedCurrentDate)) {
-                            hourlyList.add(weather)
-                        } else { // days
-                            if (weather.dateText.substring(11, 16) == "12:00") {
-                                daysList.add(weather)
-                            }
-                        }
-                    }
-
-                    _hourlyForecastWeatherList.postValue(hourlyList)
-                    _upcomingDaysForecastWeatherList.postValue(daysList)
-
                 }
+            }
+            forecastHours.addAll(hourlyList)
+            forecastDays.addAll(daysList)
+        }
+
+    }
+
+    fun fetchWeatherData(
+        lat: Double = 10.7946,
+        lon: Double = 106.5348,
+        units: String = "metric",
+        lang: String = "en"
+    ) {
+        viewModelScope.launch {
+            try {
+                val currentWeather = getCurrentWeather(lat, lon, units, lang)
+                getUpcomingForecast(lat, lon, units)
+                val data = Triple(currentWeather, forecastHours, forecastDays)
+                _uiState.emit(Response.Success(data))
+                _uiState.emit(
+                    if (currentWeather != null) Response.Success(data) else Response.Failure(
+                        "Error from api"
+                    )
+                )
             } catch (e: Exception) {
-                Log.e("TAG", "getUpcomingForecast: ${e.message}")
+                _uiState.emit(Response.Failure("Failed to fetch weather data: ${e.message}"))
             }
         }
+    }
 }

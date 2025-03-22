@@ -11,17 +11,18 @@ fun CurrentWeatherResponse.toCurrentWeather(): CurrentWeather {
         dt = dt ?: 0,
         dateText = timeStampToHumanDate(dt?.toLong() ?: 0L, "EEE, dd MMM"),
         timeText = timeStampToHumanDate(dt?.toLong() ?: 0L, "h:mm a"),
-        icon = "https://openweathermap.org/img/wn/${weather[0].icon}@2x.png",
+        icon = getDrawableFromIconCode(weather[0].icon ?: "0"),
         temp = main?.temp ?: 0.0,
         tempMin = main?.tempMin ?: 0.0,
         tempMax = main?.tempMax ?: 0.0,
-        pressure = if (main?.pressure != null) "${main?.pressure} hPa" else "0 hPa",
-        humidity = if (main?.humidity != null) "${main?.humidity} %" else "0 %",
+        pressure = if (main?.pressure != null) "${main?.pressure} " else "0",
+        humidity = if (main?.humidity != null) "${main?.humidity} " else "0",
         windSpeed = wind?.speed ?: 0.0,
-        cloud = if (clouds?.all != null) "${clouds?.all} %" else "0 %",
+        cloud = if (clouds?.all != null) "${clouds?.all} " else "0",
         description = weather[0].description ?: "",
         lat = coord?.lat ?: 0.0,
-        long = coord?.lon ?: 0.0
+        long = coord?.lon ?: 0.0,
+        background = getBackgroundDrawableFromIconCode(weather[0].icon ?: "0")
     )
 }
 
@@ -32,7 +33,7 @@ fun UpcomingForecastResponse.toForecastWeatherList(): List<ForecastWeather> {
             ForecastWeather(
                 date = it.dt ?: 0,
                 time = timeStampToHumanDate(it.dt?.toLong() ?: 0L, "h:mm a"),
-                icon = "https://openweathermap.org/img/wn/${it.weathers[0].icon}@2x.png",/*it.weathers[0].icon ?: "",*/
+                icon = getDrawableFromIconCode(it.weathers[0].icon ?: "0"),
                 temp = it.main?.temp ?: 0.0,
                 tempMin = it.main?.tempMin ?: 0.0,
                 tempMax = it.main?.tempMax ?: 0.0,

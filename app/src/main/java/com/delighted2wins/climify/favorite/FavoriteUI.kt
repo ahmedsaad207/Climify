@@ -7,11 +7,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -21,13 +21,13 @@ import com.delighted2wins.climify.data.local.WeathersLocalDataSourceImpl
 import com.delighted2wins.climify.data.remote.RetrofitClient
 import com.delighted2wins.climify.data.remote.WeatherRemoteDataSourceImpl
 import com.delighted2wins.climify.data.repo.WeatherRepositoryImpl
-import com.delighted2wins.climify.home.HomeViewModel
-import com.delighted2wins.climify.home.HomeViewModelFactory
 
 @Composable
 fun FavoriteUI(
+    showBottomNabBar: MutableState<Boolean>,
     onNavigateToWeatherDetails: () -> Unit
 ) {
+    showBottomNabBar.value = true
     val context = LocalContext.current
     val viewModel: FavoriteViewModel = viewModel(
         factory = FavoriteViewModelFactory(
