@@ -19,7 +19,8 @@ import androidx.compose.ui.unit.sp
 import com.delighted2wins.climify.utils.SP_NAME
 
 @Composable
-fun SettingsUI(onNavigateToMap: () -> Unit) {
+fun SettingsUI(showBottomNabBar: MutableState<Boolean>, onNavigateToMap: () -> Unit) {
+    showBottomNabBar.value = true
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
     val lang = sharedPreferences.getString("lang", "en") ?: "en"

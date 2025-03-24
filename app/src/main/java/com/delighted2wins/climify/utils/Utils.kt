@@ -1,7 +1,10 @@
 package com.delighted2wins.climify.utils
 
 import com.delighted2wins.climify.R
+import com.delighted2wins.climify.domainmodel.CurrentWeather
+import com.delighted2wins.climify.domainmodel.ForecastWeather
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Locale
 
 fun timeStampToHumanDate(timeStamp: Long, format: String): String {
@@ -60,4 +63,30 @@ fun getBackgroundDrawableFromIconCode(iconCode: String): Int {
         "50n" -> R.drawable.mist
         else -> R.drawable.clear_sky
     }
+}
+
+fun filterForecastToHoursAndDays(
+    currentWeather: ForecastWeather,
+    forecastList: List<ForecastWeather>
+): Pair<List<ForecastWeather>, List<ForecastWeather>> {
+    val hours = mutableListOf<ForecastWeather>()
+    val days = mutableListOf<ForecastWeather>()
+    hours.add(currentWeather)
+
+    val calendar = Calendar.getInstance()
+    val currentDate = calendar.time
+    val formattedCurrentDate =
+        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(currentDate)
+
+    forecastList.forEach { weather ->
+        val dateAndTime = weather.dateText.split(" ")
+        if (dateAndTime.contains(formattedCurrentDate)) {
+            hours.add(weather)
+        } else { // days
+            if (weather.dateText.substring(11, 16) == "12:00") {
+                days.add(weather)
+            }
+        }
+    }
+    return Pair(hours, days)
 }

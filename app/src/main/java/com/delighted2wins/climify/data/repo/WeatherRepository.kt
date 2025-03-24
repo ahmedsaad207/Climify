@@ -12,13 +12,13 @@ interface WeatherRepository {
         lon: Double,
         units: String,
         lang: String
-    ): CurrentWeatherResponse
+    ): Flow<CurrentWeatherResponse>
 
     suspend fun getUpcomingForecast(
         lat: Double,
         lon: Double,
         units: String
-    ): UpcomingForecastResponse
+    ): Flow<UpcomingForecastResponse>
 
     suspend fun getStateInfoByLocation(
         lat: Double,
@@ -32,5 +32,9 @@ interface WeatherRepository {
     suspend fun insertWeather(weather: CurrentWeather): Long
 
     suspend fun getFavoriteWeathers(): Flow<List<CurrentWeather>>
+
+    fun getWeatherById(id: Int): Flow<CurrentWeather>
+
+    suspend fun updateWeather(weather: CurrentWeather)
 
 }

@@ -73,14 +73,14 @@ class LocationSelectionViewModel(
     fun insertWeather(latLng: LatLng) {
         viewModelScope.launch {
             try {
-                val currentWeather =
+                /*val currentWeather =
                     repository.getCurrentWeather(latLng.latitude, latLng.longitude, "metric", "en")
                         .toCurrentWeather()
 
                 val isInserted = repository.insertWeather(currentWeather)
 
                 if (isInserted > 0) Log.i("TAG", "insertWeather: currentWeather: inserted") //TODO
-                else Log.i("TAG", "insertWeather: isInserted: inserted") // TODO
+                else Log.i("TAG", "insertWeather: isInserted: inserted") // TODO*/
 
             } catch (e: Exception) {
                 // TODO

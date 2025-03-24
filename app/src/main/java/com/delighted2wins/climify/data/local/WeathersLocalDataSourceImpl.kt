@@ -12,4 +12,12 @@ class WeathersLocalDataSourceImpl(private val dao: WeatherDao) : WeathersLocalDa
         return dao.getFavoriteWeathers()
     }
 
+    override fun getWeatherById(id: Int): Flow<CurrentWeather> {
+        return dao.getWeatherById(id)
+    }
+
+    override suspend fun updateWeather(weather: CurrentWeather) {
+        dao.updateWeather(weather)
+    }
+
 }

@@ -1,5 +1,6 @@
 package com.delighted2wins.climify
 
+import com.delighted2wins.climify.domainmodel.CurrentWeather
 import kotlinx.serialization.Serializable
 
 sealed class Screen {
@@ -19,5 +20,5 @@ sealed class Screen {
     data object LocationSelection : Screen()
 
     @Serializable
-    data object Details : Screen()
+    data class Details(val id: Int) : Screen()
 }
