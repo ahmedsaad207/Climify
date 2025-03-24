@@ -8,4 +8,7 @@ interface WeathersLocalDataSource {
 
     suspend fun getFavoriteWeathers(): Flow<List<CurrentWeather>>
 
+    fun getWeatherById(id: Int): Flow<CurrentWeather>
+
+    suspend fun updateWeather(weather: CurrentWeather)
 }

@@ -46,3 +46,16 @@ fun UpcomingForecastResponse.toForecastWeatherList(): List<ForecastWeather> {
     }
     return forecastWeathers
 }
+
+fun CurrentWeather.toForecastWeather(): ForecastWeather {
+   return ForecastWeather(
+        dateText = "",
+        time = "Now",
+        date = dt,
+        icon = icon,
+        temp = temp,
+        tempMin = tempMin,
+        tempMax = tempMax,
+        description = description
+    )
+}

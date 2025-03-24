@@ -17,7 +17,7 @@ class WeatherRepositoryImpl(
         lon: Double,
         units: String,
         lang: String
-    ): CurrentWeatherResponse {
+    ): Flow<CurrentWeatherResponse> {
         return remote.getCurrentWeather(lat, lon, units, lang)
     }
 
@@ -25,7 +25,7 @@ class WeatherRepositoryImpl(
         lat: Double,
         lon: Double,
         units: String
-    ): UpcomingForecastResponse {
+    ): Flow<UpcomingForecastResponse> {
         return remote.getUpcomingForecast(lat, lon, units)
     }
 
@@ -43,6 +43,14 @@ class WeatherRepositoryImpl(
 
     override suspend fun getFavoriteWeathers(): Flow<List<CurrentWeather>> {
         return local.getFavoriteWeathers()
+    }
+
+    override fun getWeatherById(id: Int): Flow<CurrentWeather> {
+        return local.getWeatherById(id)
+    }
+
+    override suspend fun updateWeather(weather: CurrentWeather) {
+        local.updateWeather(weather)
     }
 
 }

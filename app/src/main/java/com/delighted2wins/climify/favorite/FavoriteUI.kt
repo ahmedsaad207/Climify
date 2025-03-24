@@ -1,5 +1,6 @@
 package com.delighted2wins.climify.favorite
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -49,9 +51,12 @@ import com.delighted2wins.climify.utils.timeStampToHumanDate
 @Composable
 fun FavoriteUI(
     showBottomNabBar: MutableState<Boolean>,
-    onNavigateToWeatherDetails: () -> Unit
+    onNavigateToWeatherDetails: (Int) -> Unit
 ) {
-    showBottomNabBar.value = true
+
+   LaunchedEffect(Unit) {
+       showBottomNabBar.value = true
+   }
     val context = LocalContext.current
     val viewModel: FavoriteViewModel = viewModel(
         factory = FavoriteViewModelFactory(
@@ -158,9 +163,11 @@ fun FavoriteUI(
                         progress = { progress },
                     )
                     Text(
+                        modifier = Modifier.padding(horizontal = 24.dp),
                         text = error,
                         fontSize = 18.sp,
-                        color = Color(0xFF808080)
+                        color = Color(0xFF808080),
+                        textAlign = TextAlign.Center
                     )
                 }
             }
@@ -170,14 +177,14 @@ fun FavoriteUI(
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun FavoriteLocationItem(weather: CurrentWeather, onNavigateToWeatherDetails: () -> Unit) {
+fun FavoriteLocationItem(weather: CurrentWeather, onNavigateToWeatherDetails: (Int) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 8.dp)
             .background(Color(0xff1E1F1C), shape = RoundedCornerShape(32.dp))
             .padding(16.dp)
-            .clickable { onNavigateToWeatherDetails() }
+            .clickable { onNavigateToWeatherDetails(weather.id) }
     ) {
         // country, city and description, time
         Column {

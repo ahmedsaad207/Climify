@@ -64,7 +64,7 @@ fun HomeUi(
     }
 }
 
-private fun getRepo(context: Context) = WeatherRepositoryImpl(
+fun getRepo(context: Context) = WeatherRepositoryImpl(
     WeatherRemoteDataSourceImpl(RetrofitClient.service),
     WeathersLocalDataSourceImpl(
         WeatherDatabase.getInstance(context.applicationContext).getWeatherDao(),

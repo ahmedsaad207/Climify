@@ -3,16 +3,17 @@ package com.delighted2wins.climify.data.remote
 import com.delighted2wins.climify.data.model.CurrentWeatherResponse
 import com.delighted2wins.climify.data.model.UpcomingForecastResponse
 import com.delighted2wins.climify.domainmodel.State
+import kotlinx.coroutines.flow.Flow
 
 interface WeatherRemoteDataSource {
 
-    suspend fun getCurrentWeather(lat: Double, lon: Double, units: String,lang: String): CurrentWeatherResponse
+    suspend fun getCurrentWeather(lat: Double, lon: Double, units: String,lang: String): Flow<CurrentWeatherResponse>
 
     suspend fun getUpcomingForecast(
         lat: Double,
         lon: Double,
         units: String
-    ): UpcomingForecastResponse
+    ): Flow<UpcomingForecastResponse>
 
     suspend fun getStateInfoByLocation(
         lat: Double,

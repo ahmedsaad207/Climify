@@ -2,6 +2,7 @@ package com.delighted2wins.climify
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -25,8 +26,13 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
@@ -56,6 +63,7 @@ class MainActivity : ComponentActivity() {
             val showFloatingActionButton = remember { mutableStateOf(false) }
             val showBottomNabBar = remember { mutableStateOf(true) }
             val navController = rememberNavController()
+            val selectedNavigationIndex = rememberSaveable { mutableIntStateOf(0) }
             Scaffold(
                 bottomBar = {
                     if (showBottomNabBar.value) {
@@ -65,7 +73,7 @@ class MainActivity : ComponentActivity() {
                                 .wrapContentHeight(),
                             containerColor = Color(0xff151513)
                         ) {
-                            BottomNavigationBar(navController, showFloatingActionButton)
+                            BottomNavigationBar(navController, showFloatingActionButton,selectedNavigationIndex)
                         }
                     }
                 },
@@ -96,9 +104,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun BottomNavigationBar(
     navController: NavHostController,
-    showFloatingActionButton: MutableState<Boolean>
+    showFloatingActionButton: MutableState<Boolean>,
+    selectedNavigationIndex: MutableIntState
 ) {
-    val selectedNavigationIndex = rememberSaveable { mutableIntStateOf(0) }
+//    val selectedNavigationIndex = rememberSaveable { mutableIntStateOf(0) }
     val navigationBottomItems = listOf(
         NavigationItem(Icons.Rounded.Home, Screen.Home),
         NavigationItem(Icons.Rounded.FavoriteBorder, Screen.Favorite),
@@ -108,18 +117,18 @@ fun BottomNavigationBar(
 
     Row(Modifier.zIndex(1f)) {
         navigationBottomItems.forEachIndexed { i, navItem ->
-            /*NavigationBarItem(
-                selected = selectedNavigationIndex.intValue == i,
-                onClick = {
-                    selectedNavigationIndex.intValue = i
-                },
-                icon = { Icon(painter = painterResource(icon), contentDescription = null) },
-                label = { Text("Home") },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color.White,
-                    indicatorColor = MaterialTheme.colorScheme.primary
-                )
-            )*/
+//            NavigationBarItem(
+//                selected = selectedNavigationIndex.intValue == i,
+//                onClick = {
+//                    selectedNavigationIndex.intValue = i
+//                },
+//                icon = { Icon(painter = painterResource(icon), contentDescription = null) },
+//                label = { Text("Home") },
+//                colors = NavigationBarItemDefaults.colors(
+//                    selectedIconColor = Color.White,
+//                    indicatorColor = MaterialTheme.colorScheme.primary
+//                )
+//            )
             Box(
                 modifier = Modifier
                     .wrapContentHeight()

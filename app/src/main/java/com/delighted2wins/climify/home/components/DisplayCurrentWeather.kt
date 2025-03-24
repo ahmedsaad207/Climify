@@ -32,24 +32,30 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.delighted2wins.climify.R
 import com.delighted2wins.climify.domainmodel.CurrentWeather
+import com.delighted2wins.climify.weatherdetails.BackButton
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun DisplayCurrentWeather(
-    onNavigateToLocationSelection: () -> Unit,
-    currentWeather: CurrentWeather
+    onNavigateToLocationSelection: () -> Unit = {},
+    currentWeather: CurrentWeather,
+    backButton: Boolean,
+    onNavigateBack: () -> Unit = {},
+    isLocal: Boolean = false
 ) {
     Box(
         modifier = Modifier
             .fillMaxSize()
     ) {
+
         // background gif
         Surface(modifier = Modifier.fillMaxSize()) {
 
@@ -79,7 +85,6 @@ fun DisplayCurrentWeather(
         }
 
 
-
         // weather data
         Column(
             modifier = Modifier
@@ -88,12 +93,20 @@ fun DisplayCurrentWeather(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(Modifier.height(24.dp))
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Start)
+                    .padding(horizontal = 16.dp)
+                    .size(if (backButton) 60.dp else 0.dp)
+            )
+            { BackButton(onNavigateBack) }
+
             // City
             Row(
                 modifier = Modifier
                     .wrapContentWidth()
                     .padding(vertical = 24.dp, horizontal = 6.dp)
-                    .align(Alignment.Start)
+                    .align(if (backButton) Alignment.CenterHorizontally else Alignment.Start)
                     .clickable {
                         onNavigateToLocationSelection()
                     }
@@ -116,12 +129,26 @@ fun DisplayCurrentWeather(
                 )
                 Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.White)
             }
+            if (isLocal) {
+                Text(
+                    text = "Last update:",
+                    fontSize = 14.sp,
+                    color = Color(0xFFFFFFFF),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .padding(start = 48.dp, top = 24.dp)
+                        .background(Color.Black.copy(0.4f), shape = RoundedCornerShape(8.dp))
+                        .align(Alignment.Start)
+                        .padding(4.dp),
+                    textAlign = TextAlign.Start
+                )
+            }
 
             // Time & Date
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp),
+                    .padding(horizontal = 24.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(

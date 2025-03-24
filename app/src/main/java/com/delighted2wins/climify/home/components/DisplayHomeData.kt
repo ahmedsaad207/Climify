@@ -9,7 +9,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import com.delighted2wins.climify.R
 import com.delighted2wins.climify.domainmodel.CurrentWeather
@@ -18,9 +17,12 @@ import com.delighted2wins.climify.domainmodel.ForecastWeather
 @Composable
 fun DisplayHomeData(
     currentWeather: CurrentWeather,
-    onNavigateToLocationSelection: () -> Unit,
+    onNavigateToLocationSelection: () -> Unit = {},
     forecastHours: List<ForecastWeather>,
-    forecastDays: List<ForecastWeather>
+    forecastDays: List<ForecastWeather>,
+    isOnline: Boolean = true,
+    backButton: Boolean = false,
+    onNavigateBack: () -> Unit = {}
 ) {
     Box {
         Box(
@@ -35,9 +37,13 @@ fun DisplayHomeData(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            DisplayCurrentWeather(onNavigateToLocationSelection, currentWeather)
-            DisplayHourlyWeathers(forecastHours)
-            DisplayUpcomingWeathers(forecastDays)
+            if (isOnline) {
+                DisplayCurrentWeather(onNavigateToLocationSelection, currentWeather, backButton, onNavigateBack)
+                DisplayHourlyWeathers(forecastHours)
+                DisplayUpcomingWeathers(forecastDays)
+            } else {
+                DisplayCurrentWeather(onNavigateToLocationSelection, currentWeather,backButton, onNavigateBack, true)
+            }
         }
 
 

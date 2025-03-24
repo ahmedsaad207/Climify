@@ -3,6 +3,8 @@ package com.delighted2wins.climify.data.remote
 import com.delighted2wins.climify.data.model.CurrentWeatherResponse
 import com.delighted2wins.climify.data.model.UpcomingForecastResponse
 import com.delighted2wins.climify.domainmodel.State
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 class WeatherRemoteDataSourceImpl(private val service: WeatherService) : WeatherRemoteDataSource {
 
@@ -11,16 +13,16 @@ class WeatherRemoteDataSourceImpl(private val service: WeatherService) : Weather
         lon: Double,
         units: String,
         lang: String
-    ): CurrentWeatherResponse {
-        return service.getCurrentWeather(lat, lon, units, lang)
+    ): Flow<CurrentWeatherResponse> {
+        return flowOf(service.getCurrentWeather(lat, lon, units, lang))
     }
 
     override suspend fun getUpcomingForecast(
         lat: Double,
         lon: Double,
         units: String
-    ): UpcomingForecastResponse {
-        return service.getUpcomingForecast(lat, lon, units)
+    ): Flow<UpcomingForecastResponse> {
+        return flowOf(service.getUpcomingForecast(lat, lon, units))
     }
 
     override suspend fun getStateInfoByLocation(
