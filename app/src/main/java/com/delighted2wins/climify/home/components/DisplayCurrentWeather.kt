@@ -158,20 +158,6 @@ fun DisplayCurrentWeather(
                 modifier = Modifier.size(150.dp)
             )
 
-            // lottie icon
-            /*val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.lott))
-            val progress by animateLottieCompositionAsState(
-                isPlaying = true,
-                composition = composition,
-                iterations = LottieConstants.IterateForever,
-                speed = 1f
-            )
-            LottieAnimation(
-                modifier = Modifier.size(150.dp),
-                composition = composition,
-                progress = { progress },
-            )*/
-
             // Temp
             Text(
                 text = "${currentWeather.temp.toInt()}\u00B0",

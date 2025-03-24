@@ -10,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
+import com.delighted2wins.climify.R
 import com.delighted2wins.climify.domainmodel.CurrentWeather
 import com.delighted2wins.climify.domainmodel.ForecastWeather
 
@@ -24,7 +26,7 @@ fun DisplayHomeData(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(color = Color(0xff151513))
+                .background(color = colorResource(R.color.deep_gray))
         )
 
         Column(
