@@ -1,6 +1,5 @@
 package com.delighted2wins.climify.home.components
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -33,7 +32,6 @@ fun DisplayHourlyWeathers(forecastHours: List<ForecastWeather>) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 24.dp),
-//        horizontalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         items(forecastHours.size) {
             HourlyForecastItem(

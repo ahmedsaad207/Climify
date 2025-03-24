@@ -5,8 +5,8 @@ import androidx.room.PrimaryKey
 
 @Entity
 data class CurrentWeather(
-    @PrimaryKey
     var city: String,
+    @PrimaryKey
     var dt: Int,
     var dateText: String,
     var timeText: String,
@@ -21,5 +21,6 @@ data class CurrentWeather(
     var cloud: String,
     var lat: Double,
     var long: Double,
-    var description: String
+    var description: String,
+    var country: String
 )

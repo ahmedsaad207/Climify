@@ -38,8 +38,6 @@ fun DisplayUpcomingWeathers(forecastDays: List<ForecastWeather>) {
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 16.dp)
     )
-    var tempMin: String
-    var tempMax: String
     Spacer(Modifier.height(24.dp))
 
     Column {
@@ -53,34 +51,5 @@ fun DisplayUpcomingWeathers(forecastDays: List<ForecastWeather>) {
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
-
-    /*LazyColumn(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(forecastDays.size) { i ->
-            tempMin = forecastDays[i].tempMin.toInt()
-                .toString() + "°"
-            tempMax = forecastDays[i].tempMax.toInt()
-                .toString() + "°"
-
-            UpcomingForecastItem(
-                timeStampToHumanDate(
-                    forecastDays[i].date.toLong(),
-                    "EEE"
-                ),
-                timeStampToHumanDate(
-                    forecastDays[i].date.toLong(),
-                    "d MMM"
-                ),
-                forecastDays[i].icon,
-                forecastDays[i].description,
-                "$tempMin-$tempMax"
-            )
-        }
-    }*/
-
     Spacer(Modifier.height(8.dp))
 }

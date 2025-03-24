@@ -1,19 +1,21 @@
 package com.delighted2wins.climify.favorite
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.delighted2wins.climify.Response
 import com.delighted2wins.climify.data.repo.WeatherRepository
 import com.delighted2wins.climify.domainmodel.CurrentWeather
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
 class FavoriteViewModel(private val repository: WeatherRepository) : ViewModel() {
 
-    private val _weathers = MutableStateFlow<List<CurrentWeather>>(emptyList())
-    val weathers: StateFlow<List<CurrentWeather>> = _weathers
+    private val _uiState =
+        MutableStateFlow<Response<List<CurrentWeather>>>(Response.Loading)
+    val uiState = _uiState.asStateFlow()
 
     init {
         getFavoriteWeathers()
@@ -24,14 +26,13 @@ class FavoriteViewModel(private val repository: WeatherRepository) : ViewModel()
             try {
                 repository.getFavoriteWeathers()
                     .catch { e ->
-                        Log.i("TAG", "${e.message}")
-                    } //TODO
+                        _uiState.emit(Response.Failure("Error: ${e.message}"))
+                    }
                     .collect { weathers ->
-                        _weathers.emit(weathers)
+                        _uiState.emit(Response.Success(weathers))
                     }
             } catch (e: Exception) {
-                Log.i("TAG", "in catch: ${e.message}")
-                // TODO
+                _uiState.emit(Response.Failure("Error: ${e.message}"))
             }
 
         }
