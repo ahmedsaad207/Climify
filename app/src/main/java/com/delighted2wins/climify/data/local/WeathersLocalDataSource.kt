@@ -11,4 +11,6 @@ interface WeathersLocalDataSource {
     fun getWeatherById(id: Int): Flow<CurrentWeather>
 
     suspend fun updateWeather(weather: CurrentWeather)
+
+    suspend fun deleteWeather(weather: CurrentWeather)
 }

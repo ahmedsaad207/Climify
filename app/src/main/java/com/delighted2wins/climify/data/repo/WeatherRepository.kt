@@ -37,4 +37,5 @@ interface WeatherRepository {
 
     suspend fun updateWeather(weather: CurrentWeather)
 
+    suspend fun deleteWeather(weather: CurrentWeather)
 }

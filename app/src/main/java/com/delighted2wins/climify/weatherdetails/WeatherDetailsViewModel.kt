@@ -31,16 +31,32 @@ class WeatherDetailsViewModel(private val repository: WeatherRepository) : ViewM
     val weather = _weather.asStateFlow()
 
     fun fetchWeatherData(
-        lat: Double = 10.7946,
-        lon: Double = 106.5348,
+        localWeather: CurrentWeather,
+        isOnline: Boolean = true,
         units: String = "metric",
-        lang: String = "en",
-        id: Int
+        lang: String = "en"
+    ) {
+        if (isOnline) {
+            fetchApiData(localWeather, units, lang)
+        } else {
+            fetchLocalData(localWeather)
+        }
+    }
+
+    private fun fetchApiData(
+        localWeather: CurrentWeather,
+        units: String,
+        lang: String
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val currentWeatherDeferred = async {
-                    repository.getCurrentWeather(lat, lon, units, lang)
+                    repository.getCurrentWeather(
+                        localWeather.lat,
+                        localWeather.long,
+                        units,
+                        lang
+                    )
                         .catch { e ->
                             _uiState.value = Response.Failure(e.message.toString())
                         }
@@ -51,7 +67,7 @@ class WeatherDetailsViewModel(private val repository: WeatherRepository) : ViewM
                 }
 
                 val upcomingForecastDeferred = async {
-                    repository.getUpcomingForecast(lat, lon, units)
+                    repository.getUpcomingForecast(localWeather.lat, localWeather.long, units)
                         .catch { e ->
                             _uiState.value = Response.Failure(e.message.toString())
                         }
@@ -70,9 +86,9 @@ class WeatherDetailsViewModel(private val repository: WeatherRepository) : ViewM
                         upcomingForecast
                     )
                     val data = Triple(currentWeather, hours, days)
-                    _uiState.value = Response.Success(data)
-                    currentWeather.id = id
+                    currentWeather.id = localWeather.id
                     repository.updateWeather(currentWeather)
+                    _uiState.value = Response.Success(data)
                 } else {
                     _uiState.value = Response.Failure("Failed to fetch data.")
                 }
@@ -90,7 +106,7 @@ class WeatherDetailsViewModel(private val repository: WeatherRepository) : ViewM
         }
     }
 
-    fun fetchLocalData(data: CurrentWeather) = viewModelScope.launch {
+    private fun fetchLocalData(data: CurrentWeather) = viewModelScope.launch {
         _uiState.emit(Response.Success(Triple(data, emptyList<Nothing>(), emptyList<Nothing>())))
     }
 }

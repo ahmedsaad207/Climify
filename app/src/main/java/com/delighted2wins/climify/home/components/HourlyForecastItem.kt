@@ -36,11 +36,14 @@ fun HourlyForecastItem(icon: Int, time: String, temp: String) {
         GlideImage(
             model = icon,
             contentDescription = null,
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier
+                .padding(vertical = 6.dp)
+                .size(48.dp)
         )
         // temp
         Row(
-            verticalAlignment = Alignment.Top
+            verticalAlignment = Alignment.Top,
+            modifier = Modifier
         ) {
             Text(
                 text = temp,
