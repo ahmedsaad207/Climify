@@ -1,6 +1,7 @@
 package com.delighted2wins.climify.data.local
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -13,7 +14,7 @@ interface WeatherDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertWeather(weather: CurrentWeather): Long
 
-    @Query("SELECT * FROM CurrentWeather")
+    @Query("SELECT * FROM CurrentWeather ORDER BY dt DESC")
     fun getFavoriteWeathers(): Flow<List<CurrentWeather>>
 
     @Query("SELECT * FROM CurrentWeather WHERE id == :id")
@@ -21,4 +22,7 @@ interface WeatherDao {
 
     @Update
     suspend fun updateWeather(weather: CurrentWeather)
+
+    @Delete
+    suspend fun deleteWeather(weather: CurrentWeather)
 }

@@ -1,6 +1,7 @@
 package com.delighted2wins.climify.locationselection
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

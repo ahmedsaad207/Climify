@@ -17,6 +17,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -73,14 +75,18 @@ class LocationSelectionViewModel(
     fun insertWeather(latLng: LatLng) {
         viewModelScope.launch {
             try {
-                /*val currentWeather =
+                val currentWeather =
                     repository.getCurrentWeather(latLng.latitude, latLng.longitude, "metric", "en")
-                        .toCurrentWeather()
+                        .map {
+                            it.toCurrentWeather()
+                        }
+                        .first()
+
 
                 val isInserted = repository.insertWeather(currentWeather)
 
                 if (isInserted > 0) Log.i("TAG", "insertWeather: currentWeather: inserted") //TODO
-                else Log.i("TAG", "insertWeather: isInserted: inserted") // TODO*/
+                else Log.i("TAG", "insertWeather: isInserted: inserted") // TODO
 
             } catch (e: Exception) {
                 // TODO

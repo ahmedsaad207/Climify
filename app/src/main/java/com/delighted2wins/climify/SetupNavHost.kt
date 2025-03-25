@@ -1,5 +1,6 @@
 package com.delighted2wins.climify
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.navigation.NavHostController
@@ -12,14 +13,12 @@ import com.delighted2wins.climify.locationselection.LocationSelectionUI
 import com.delighted2wins.climify.settings.SettingsUI
 import com.delighted2wins.climify.weatherdetails.DetailsUI
 
-//    snackBarHostState: SnackbarHostState,
-//    titleState: MutableState<String>
-
 @Composable
 fun SetupNavHost(
     navController: NavHostController,
     showFloatingActionButton: MutableState<Boolean>,
     showBottomNabBar: MutableState<Boolean>,
+    snackBarHostState: SnackbarHostState,
 ) {
     NavHost(
         navController = navController,
@@ -32,7 +31,7 @@ fun SetupNavHost(
         }
 
         composable<Screen.Favorite> {
-            FavoriteUI(showBottomNabBar) {
+            FavoriteUI(showBottomNabBar, snackBarHostState, showFloatingActionButton) {
                 navController.navigate(Screen.Details(it))
             }
         }

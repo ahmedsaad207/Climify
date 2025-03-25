@@ -6,7 +6,6 @@ import com.delighted2wins.climify.Response
 import com.delighted2wins.climify.data.repo.WeatherRepository
 import com.delighted2wins.climify.domainmodel.CurrentWeather
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
@@ -17,12 +16,9 @@ class FavoriteViewModel(private val repository: WeatherRepository) : ViewModel()
         MutableStateFlow<Response<List<CurrentWeather>>>(Response.Loading)
     val uiState = _uiState.asStateFlow()
 
-    init {
-        getFavoriteWeathers()
-    }
-
-    private fun getFavoriteWeathers() {
+    fun getFavoriteWeathers() {
         viewModelScope.launch {
+            _uiState.value = Response.Loading
             try {
                 repository.getFavoriteWeathers()
                     .catch { e ->
@@ -36,5 +32,14 @@ class FavoriteViewModel(private val repository: WeatherRepository) : ViewModel()
             }
 
         }
+    }
+
+    fun deleteWeather(weather: CurrentWeather) = viewModelScope.launch {
+        repository.deleteWeather(weather)
+
+    }
+
+    fun insertWeather(weather: CurrentWeather) = viewModelScope.launch {
+        repository.insertWeather(weather)
     }
 }

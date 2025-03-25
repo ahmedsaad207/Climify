@@ -20,4 +20,8 @@ class WeathersLocalDataSourceImpl(private val dao: WeatherDao) : WeathersLocalDa
         dao.updateWeather(weather)
     }
 
+    override suspend fun deleteWeather(weather: CurrentWeather) {
+        dao.deleteWeather(weather)
+    }
+
 }

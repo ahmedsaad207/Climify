@@ -23,7 +23,8 @@ fun CurrentWeatherResponse.toCurrentWeather(): CurrentWeather {
         lat = coord?.lat ?: 0.0,
         long = coord?.lon ?: 0.0,
         background = getBackgroundDrawableFromIconCode(weather[0].icon ?: "0"),
-        country = sys?.country ?: ""
+        country = sys?.country ?: "",
+        id = id ?: -1
     )
 }
 

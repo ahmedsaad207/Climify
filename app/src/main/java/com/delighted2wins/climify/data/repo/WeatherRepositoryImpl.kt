@@ -53,4 +53,8 @@ class WeatherRepositoryImpl(
         local.updateWeather(weather)
     }
 
+    override suspend fun deleteWeather(weather: CurrentWeather) {
+        local.deleteWeather(weather)
+    }
+
 }
