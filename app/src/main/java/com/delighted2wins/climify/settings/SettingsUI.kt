@@ -16,17 +16,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.delighted2wins.climify.utils.SP_NAME
+import com.delighted2wins.climify.utils.Constants
 
 @Composable
 fun SettingsUI(showBottomNabBar: MutableState<Boolean>, onNavigateToMap: () -> Unit) {
     showBottomNabBar.value = true
     val context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+    val sharedPreferences =
+        context.getSharedPreferences(Constants.PREF_NAME, Context.MODE_PRIVATE)
     val lang = sharedPreferences.getString("lang", "en") ?: "en"
-    val temp = sharedPreferences.getString("temp", "metric")?: "metric"
-    val location = sharedPreferences.getString("location", "map")?: "map"
-    val windSpeed = sharedPreferences.getString("wind_speed", "meter_per_sec")?: "meter_per_sec"
+    val temp = sharedPreferences.getString("temp", "metric") ?: "metric"
+    val location = sharedPreferences.getString("location", "map") ?: "map"
+    val windSpeed = sharedPreferences.getString("wind_speed", "meter_per_sec") ?: "meter_per_sec"
     val selectedLanguage = remember { mutableStateOf(lang) }
     val selectedTempUnit = remember { mutableStateOf(temp) }
     val selectedLocation = remember { mutableStateOf(location) }

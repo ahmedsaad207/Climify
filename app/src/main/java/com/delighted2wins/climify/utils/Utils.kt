@@ -1,7 +1,6 @@
 package com.delighted2wins.climify.utils
 
 import com.delighted2wins.climify.R
-import com.delighted2wins.climify.domainmodel.CurrentWeather
 import com.delighted2wins.climify.domainmodel.ForecastWeather
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -12,8 +11,8 @@ fun timeStampToHumanDate(timeStamp: Long, format: String): String {
     return sdf.format(timeStamp * 1000)
 }
 
-fun getCountryNameFromCode(countryCode: String): String? {
-    val locale = Locale("", countryCode)
+fun String.getCountryNameFromCode(): String? {
+    val locale = Locale("", this)
     return locale.displayCountry
 }
 

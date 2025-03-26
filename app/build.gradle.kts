@@ -104,5 +104,6 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
     implementation("com.google.accompanist:accompanist-drawablepainter:0.35.0-alpha")
 
-
+    // work
+    implementation("androidx.work:work-runtime-ktx:2.10.0")
 }

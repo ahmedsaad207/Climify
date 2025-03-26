@@ -148,7 +148,8 @@ fun BottomNavigationBar(
                     ) {
                         selectedNavigationIndex.intValue = i
                         navController.navigate(navItem.route)
-                        showFloatingActionButton.value = navItem.route == Screen.Favorite
+                        showFloatingActionButton.value =
+                            (navItem.route == Screen.Favorite) || (navItem.route == Screen.Alarm)
                     },
                 contentAlignment = Alignment.BottomCenter,
             ) {
@@ -174,7 +175,6 @@ fun BottomNavigationBar(
 
         }
     }
-
 }
 
 data class NavigationItem(

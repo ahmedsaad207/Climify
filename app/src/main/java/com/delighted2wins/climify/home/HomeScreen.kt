@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,7 +37,7 @@ import com.delighted2wins.climify.data.remote.WeatherRemoteDataSourceImpl
 import com.delighted2wins.climify.data.repo.WeatherRepositoryImpl
 import com.delighted2wins.climify.home.components.DisplayHomeData
 import com.delighted2wins.climify.home.components.LoadingIndicator
-import com.delighted2wins.climify.utils.SP_NAME
+import com.delighted2wins.climify.utils.Constants
 
 @Composable
 fun HomeUi(
@@ -51,7 +50,8 @@ fun HomeUi(
     val viewModel: HomeViewModel = viewModel(
         factory = HomeViewModelFactory(getRepo(context))
     )
-    val sharedPreferences = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+    val sharedPreferences =
+        context.getSharedPreferences(Constants.PREF_NAME, Context.MODE_PRIVATE)
     val lat = sharedPreferences.getString("lat", "0.0") ?: "0.0"
     val lon = sharedPreferences.getString("lon", "0.0") ?: "0.0"
     val lang = sharedPreferences.getString("lang", "en") ?: "en"

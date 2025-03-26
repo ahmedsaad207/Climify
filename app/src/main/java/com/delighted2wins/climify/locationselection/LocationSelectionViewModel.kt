@@ -37,7 +37,6 @@ class LocationSelectionViewModel(
         viewModelScope.launch {
             query.debounce(500.milliseconds).collect { searchQuery ->
                 if (searchQuery.isNotBlank()) {
-
                     val request =
                         FindAutocompletePredictionsRequest
                             .builder()
@@ -94,5 +93,4 @@ class LocationSelectionViewModel(
 
         }
     }
-
 }

@@ -1,7 +1,6 @@
 package com.delighted2wins.climify.locationselection
 
 import android.content.Context
-import android.content.SharedPreferences
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -34,7 +33,7 @@ import com.delighted2wins.climify.data.local.WeathersLocalDataSourceImpl
 import com.delighted2wins.climify.data.remote.RetrofitClient
 import com.delighted2wins.climify.data.remote.WeatherRemoteDataSourceImpl
 import com.delighted2wins.climify.data.repo.WeatherRepositoryImpl
-import com.delighted2wins.climify.utils.SP_NAME
+import com.delighted2wins.climify.utils.Constants
 import com.delighted2wins.climify.utils.getCountryNameFromCode
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
@@ -57,7 +56,8 @@ fun LocationSelectionUI(showBottomNabBar: MutableState<Boolean>, onNavigateToHom
     showBottomNabBar.value = false
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+    val sharedPreferences =
+        context.getSharedPreferences(Constants.PREF_NAME, Context.MODE_PRIVATE)
 
     val placesClient: PlacesClient = Places.createClient(context.applicationContext)
     val viewModel: LocationSelectionViewModel = viewModel(
@@ -168,7 +168,7 @@ fun LocationSelectionUI(showBottomNabBar: MutableState<Boolean>, onNavigateToHom
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = currentLocation.value?.country?.let { getCountryNameFromCode(it) } ?: "",
+            Text(text = currentLocation.value?.country?.getCountryNameFromCode() ?: "",
                 color = Color.White)
             Text(text = currentLocation.value?.state ?: "", color = Color.White)
             Button(onClick = {
