@@ -28,6 +28,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
@@ -249,7 +250,7 @@ fun FavoriteLocationItem(weather: CurrentWeather, onNavigateToWeatherDetails: (I
         // country, city and description, time
         Column {
             Text(
-                text = getCountryNameFromCode(weather.country) ?: "",
+                text = weather.country.getCountryNameFromCode() ?: "",
                 fontSize = 18.sp,
                 color = Color(0xFF808080),
                 fontWeight = FontWeight.Normal,
@@ -307,11 +308,19 @@ fun FavoriteLocationItem(weather: CurrentWeather, onNavigateToWeatherDetails: (I
 }
 
 @Composable
-fun DeleteBackground() {
+fun DeleteBackground(
+    swipeDismissState: SwipeToDismissBoxState
+) {
+    val color = if (swipeDismissState.targetValue == SwipeToDismissBoxValue.EndToStart) {
+        Color.Red
+    } else {
+        Color.Transparent
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(24.dp)
+            .background(color),
         contentAlignment = Alignment.CenterEnd
     ) {
         Icon(
@@ -423,7 +432,7 @@ fun <T> SwipeToDeleteContainer(
         if (canSwipe) {
             SwipeToDismissBox(
                 state = state,
-                backgroundContent = { DeleteBackground() },
+                backgroundContent = { DeleteBackground(state) },
                 enableDismissFromStartToEnd = false
             ) {
                 content(item)
