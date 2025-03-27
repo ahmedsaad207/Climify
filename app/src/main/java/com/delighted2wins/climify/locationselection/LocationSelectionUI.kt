@@ -28,11 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.delighted2wins.climify.data.local.WeatherDatabase
-import com.delighted2wins.climify.data.local.WeathersLocalDataSourceImpl
-import com.delighted2wins.climify.data.remote.RetrofitClient
-import com.delighted2wins.climify.data.remote.WeatherRemoteDataSourceImpl
-import com.delighted2wins.climify.data.repo.WeatherRepositoryImpl
+import com.delighted2wins.climify.home.getRepo
 import com.delighted2wins.climify.utils.Constants
 import com.delighted2wins.climify.utils.getCountryNameFromCode
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -62,12 +58,7 @@ fun LocationSelectionUI(showBottomNabBar: MutableState<Boolean>, onNavigateToHom
     val placesClient: PlacesClient = Places.createClient(context.applicationContext)
     val viewModel: LocationSelectionViewModel = viewModel(
         factory = LocationSelectionViewModelFactory(
-            WeatherRepositoryImpl(
-                WeatherRemoteDataSourceImpl(RetrofitClient.service),
-                WeathersLocalDataSourceImpl(
-                    WeatherDatabase.getInstance(context.applicationContext).getWeatherDao()
-                )
-            ),
+            getRepo(context),
             placesClient
         )
     )

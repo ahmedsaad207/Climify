@@ -38,4 +38,8 @@ interface WeatherRepository {
     suspend fun updateWeather(weather: CurrentWeather)
 
     suspend fun deleteWeather(weather: CurrentWeather)
+
+    fun <T> saveData(value: T)
+
+    fun <T> getData(type: String): T
 }

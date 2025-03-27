@@ -72,4 +72,8 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
             }
         }
     }
+
+    fun <T> getData(key: String): T {
+        return repository.getData(key)
+    }
 }

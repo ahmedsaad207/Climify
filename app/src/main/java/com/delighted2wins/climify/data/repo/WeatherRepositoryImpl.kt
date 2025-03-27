@@ -1,16 +1,18 @@
 package com.delighted2wins.climify.data.repo
 
-import com.delighted2wins.climify.data.local.WeathersLocalDataSource
-import com.delighted2wins.climify.data.remote.WeatherRemoteDataSource
+import com.delighted2wins.climify.data.local.db.WeathersLocalDataSource
+import com.delighted2wins.climify.data.local.preferences.PreferencesDataSourceImpl
 import com.delighted2wins.climify.data.model.CurrentWeatherResponse
 import com.delighted2wins.climify.data.model.UpcomingForecastResponse
+import com.delighted2wins.climify.data.remote.WeatherRemoteDataSource
 import com.delighted2wins.climify.domainmodel.CurrentWeather
 import com.delighted2wins.climify.domainmodel.State
 import kotlinx.coroutines.flow.Flow
 
 class WeatherRepositoryImpl(
     private val remote: WeatherRemoteDataSource,
-    private val local: WeathersLocalDataSource
+    private val local: WeathersLocalDataSource,
+    private val preferences: PreferencesDataSourceImpl
     ) : WeatherRepository {
     override suspend fun getCurrentWeather(
         lat: Double,
@@ -55,6 +57,14 @@ class WeatherRepositoryImpl(
 
     override suspend fun deleteWeather(weather: CurrentWeather) {
         local.deleteWeather(weather)
+    }
+
+    override fun <T> saveData(value: T) {
+        preferences.saveData(value)
+    }
+
+    override fun <T> getData(type: String): T {
+        return preferences.getData(type)
     }
 
 }

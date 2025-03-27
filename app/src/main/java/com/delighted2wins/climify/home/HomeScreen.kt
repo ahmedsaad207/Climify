@@ -1,6 +1,7 @@
 package com.delighted2wins.climify.home
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,11 +31,16 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.delighted2wins.climify.R
 import com.delighted2wins.climify.Response
-import com.delighted2wins.climify.data.local.WeatherDatabase
-import com.delighted2wins.climify.data.local.WeathersLocalDataSourceImpl
+import com.delighted2wins.climify.data.local.db.WeatherDatabase
+import com.delighted2wins.climify.data.local.db.WeathersLocalDataSourceImpl
+import com.delighted2wins.climify.data.local.preferences.PreferencesDataSourceImpl
 import com.delighted2wins.climify.data.remote.RetrofitClient
 import com.delighted2wins.climify.data.remote.WeatherRemoteDataSourceImpl
 import com.delighted2wins.climify.data.repo.WeatherRepositoryImpl
+import com.delighted2wins.climify.enums.Language
+import com.delighted2wins.climify.enums.LocationSource
+import com.delighted2wins.climify.enums.TempUnit
+import com.delighted2wins.climify.enums.WindSpeedUnit
 import com.delighted2wins.climify.home.components.DisplayHomeData
 import com.delighted2wins.climify.home.components.LoadingIndicator
 import com.delighted2wins.climify.utils.Constants
@@ -50,15 +56,17 @@ fun HomeUi(
     val viewModel: HomeViewModel = viewModel(
         factory = HomeViewModelFactory(getRepo(context))
     )
-    val sharedPreferences =
-        context.getSharedPreferences(Constants.PREF_NAME, Context.MODE_PRIVATE)
-    val lat = sharedPreferences.getString("lat", "0.0") ?: "0.0"
-    val lon = sharedPreferences.getString("lon", "0.0") ?: "0.0"
-    val lang = sharedPreferences.getString("lang", "en") ?: "en"
-    val tempUnit = sharedPreferences.getString("temp", "metric") ?: "metric"
+
+    val (lat, lon) = viewModel.getData<Pair<Double, Double>>("")
+    val lang = viewModel.getData<Language>(Constants.KEY_LANG).value
+    val tempUnit = viewModel.getData<TempUnit>(Constants.KEY_TEMP_UNIT).value
+    val windSpeedUnit = viewModel.getData<WindSpeedUnit>(Constants.KEY_WIND_SPEED_UNIT).value
+    val userLocation = viewModel.getData<LocationSource>(Constants.KEY_LOCATION_SOURCE).value
+
+    Log.i("TAG", "HomeUi: lang: $lang, temp unit: $tempUnit, wind unit: $windSpeedUnit, user loc: $userLocation,  lat/long: $lat,   $lon")
 
     LaunchedEffect(Unit) {
-        viewModel.fetchWeatherData(lat.toDouble(), lon.toDouble(), tempUnit, lang)
+        viewModel.fetchWeatherData(lat, lon, tempUnit, lang)
     }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -117,7 +125,13 @@ fun HomeUi(
 fun getRepo(context: Context) = WeatherRepositoryImpl(
     WeatherRemoteDataSourceImpl(RetrofitClient.service),
     WeathersLocalDataSourceImpl(
-        WeatherDatabase.getInstance(context.applicationContext).getWeatherDao(),
+        WeatherDatabase.getInstance(context.applicationContext).getWeatherDao()
+    ),
+    PreferencesDataSourceImpl(
+        context.getSharedPreferences(
+            Constants.PREF_NAME,
+            Context.MODE_PRIVATE
+        )
     )
 )
 

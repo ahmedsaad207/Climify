@@ -59,13 +59,9 @@ import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.delighted2wins.climify.R
 import com.delighted2wins.climify.Response
-import com.delighted2wins.climify.data.local.WeatherDatabase
-import com.delighted2wins.climify.data.local.WeathersLocalDataSourceImpl
-import com.delighted2wins.climify.data.remote.RetrofitClient
-import com.delighted2wins.climify.data.remote.WeatherRemoteDataSourceImpl
-import com.delighted2wins.climify.data.repo.WeatherRepositoryImpl
 import com.delighted2wins.climify.domainmodel.CurrentWeather
 import com.delighted2wins.climify.home.components.LoadingIndicator
+import com.delighted2wins.climify.home.getRepo
 import com.delighted2wins.climify.utils.getCountryNameFromCode
 import com.delighted2wins.climify.utils.timeStampToHumanDate
 import kotlinx.coroutines.delay
@@ -85,16 +81,7 @@ fun FavoriteUI(
     }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val viewModel: FavoriteViewModel = viewModel(
-        factory = FavoriteViewModelFactory(
-            WeatherRepositoryImpl(
-                WeatherRemoteDataSourceImpl(RetrofitClient.service),
-                WeathersLocalDataSourceImpl(
-                    WeatherDatabase.getInstance(context.applicationContext).getWeatherDao()
-                )
-            )
-        )
-    )
+    val viewModel: FavoriteViewModel = viewModel(factory = FavoriteViewModelFactory(getRepo(context)))
     LaunchedEffect(Unit) {
         viewModel.getFavoriteWeathers()
     }

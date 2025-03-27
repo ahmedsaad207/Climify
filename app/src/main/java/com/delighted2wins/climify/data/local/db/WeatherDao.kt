@@ -1,4 +1,4 @@
-package com.delighted2wins.climify.data.local
+package com.delighted2wins.climify.data.local.db
 
 import androidx.room.Dao
 import androidx.room.Delete
