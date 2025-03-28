@@ -47,7 +47,7 @@ class LocationSelectionViewModel(
                     placesClient.findAutocompletePredictions(request)
                         .addOnSuccessListener { predictions.value = it.autocompletePredictions }
                         .addOnFailureListener {
-                            Log.i("TAG", "LocationSelectionUI: FailureListener ")
+                            Log.e("TAG", "LocationSelectionUI: FailureListener ${it.message}")
                         }
                 }
 

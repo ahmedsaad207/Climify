@@ -1,6 +1,5 @@
 package com.delighted2wins.climify.home.components
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,11 +39,22 @@ fun DisplayHomeData(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (isOnline) {
-                DisplayCurrentWeather(onNavigateToLocationSelection, currentWeather, backButton, onNavigateBack)
+                DisplayCurrentWeather(
+                    onNavigateToLocationSelection,
+                    currentWeather,
+                    backButton,
+                    onNavigateBack
+                )
                 DisplayHourlyWeathers(forecastHours)
                 DisplayUpcomingWeathers(forecastDays)
             } else {
-                DisplayCurrentWeather(onNavigateToLocationSelection, currentWeather,backButton, onNavigateBack, true)
+                DisplayCurrentWeather(
+                    onNavigateToLocationSelection,
+                    currentWeather,
+                    backButton,
+                    onNavigateBack,
+                    true
+                )
             }
         }
 

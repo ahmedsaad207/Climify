@@ -6,10 +6,13 @@ import com.delighted2wins.climify.Response
 import com.delighted2wins.climify.data.repo.WeatherRepository
 import com.delighted2wins.climify.domainmodel.CurrentWeather
 import com.delighted2wins.climify.domainmodel.ForecastWeather
+import com.delighted2wins.climify.enums.Language
+import com.delighted2wins.climify.enums.TempUnit
 import com.delighted2wins.climify.utils.filterForecastToHoursAndDays
 import com.delighted2wins.climify.utils.toCurrentWeather
 import com.delighted2wins.climify.utils.toForecastWeather
 import com.delighted2wins.climify.utils.toForecastWeatherList
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
@@ -27,13 +31,17 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
         )
     val uiState = _uiState.asStateFlow()
 
+    private val coroutineExceptionHandler = CoroutineExceptionHandler { _, e ->
+        _uiState.value = Response.Failure(e.message.toString())
+    }
+
     fun fetchWeatherData(
         lat: Double = 10.7946,
         lon: Double = 106.5348,
-        units: String = "metric",
-        lang: String = "en"
+        units: String = TempUnit.METRIC.value,
+        lang: String = Language.EN.value
     ) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
             try {
                 val currentWeatherDeferred = async {
                     repository.getCurrentWeather(lat, lon, units, lang)
@@ -42,6 +50,9 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
                         }
                         .map {
                             it.toCurrentWeather()
+                        }
+                        .onEach {
+                            it.unit = units
                         }
                         .firstOrNull()
                 }
@@ -52,7 +63,7 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
                             _uiState.value = Response.Failure(e.message.toString())
                         }
                         .map {
-                            it.toForecastWeatherList()
+                            it.toForecastWeatherList(units)
                         }
                         .firstOrNull()
                 }
@@ -61,7 +72,10 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
                 val upcomingForecast = upcomingForecastDeferred.await()
 
                 if (currentWeather != null && upcomingForecast != null) {
-                    val (hours, days) = filterForecastToHoursAndDays(currentWeather.toForecastWeather(), upcomingForecast)
+                    val (hours, days) = filterForecastToHoursAndDays(
+                        currentWeather.toForecastWeather().apply { unit = units },
+                        upcomingForecast
+                    )
                     val data = Triple(currentWeather, hours, days)
                     _uiState.value = Response.Success(data)
                 } else {
@@ -71,5 +85,9 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
                 _uiState.value = Response.Failure(e.message.toString())
             }
         }
+    }
+
+    fun <T> getData(key: String): T {
+        return repository.getData(key)
     }
 }

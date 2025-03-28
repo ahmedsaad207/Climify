@@ -1,4 +1,4 @@
-package com.delighted2wins.climify.data.local
+package com.delighted2wins.climify.data.local.db
 
 import com.delighted2wins.climify.domainmodel.CurrentWeather
 import kotlinx.coroutines.flow.Flow

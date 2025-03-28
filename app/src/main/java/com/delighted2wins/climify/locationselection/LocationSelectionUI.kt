@@ -25,14 +25,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.delighted2wins.climify.data.local.WeatherDatabase
-import com.delighted2wins.climify.data.local.WeathersLocalDataSourceImpl
-import com.delighted2wins.climify.data.remote.RetrofitClient
-import com.delighted2wins.climify.data.remote.WeatherRemoteDataSourceImpl
-import com.delighted2wins.climify.data.repo.WeatherRepositoryImpl
+import com.delighted2wins.climify.R
+import com.delighted2wins.climify.home.getRepo
 import com.delighted2wins.climify.utils.Constants
 import com.delighted2wins.climify.utils.getCountryNameFromCode
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -56,25 +54,17 @@ fun LocationSelectionUI(showBottomNabBar: MutableState<Boolean>, onNavigateToHom
     showBottomNabBar.value = false
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val sharedPreferences =
-        context.getSharedPreferences(Constants.PREF_NAME, Context.MODE_PRIVATE)
+    val sharedPreferences = context.getSharedPreferences(Constants.PREF_NAME, Context.MODE_PRIVATE)
 
     val placesClient: PlacesClient = Places.createClient(context.applicationContext)
     val viewModel: LocationSelectionViewModel = viewModel(
         factory = LocationSelectionViewModelFactory(
-            WeatherRepositoryImpl(
-                WeatherRemoteDataSourceImpl(RetrofitClient.service),
-                WeathersLocalDataSourceImpl(
-                    WeatherDatabase.getInstance(context.applicationContext).getWeatherDao()
-                )
-            ),
-            placesClient
+            getRepo(context), placesClient
         )
     )
 
     val currentLocation = viewModel.currentState.observeAsState()
     val cities = viewModel.predictions.collectAsStateWithLifecycle()
-    // TODO set current location from shared preferences
     val savedLocation = LatLng(31.252321, 29.992283)
     val cameraPosition = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(savedLocation, 5f)
@@ -88,15 +78,13 @@ fun LocationSelectionUI(showBottomNabBar: MutableState<Boolean>, onNavigateToHom
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
 
-        GoogleMap(
-            modifier = Modifier.fillMaxSize(),
+        GoogleMap(modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPosition,
             onMapLoaded = { isMapLoaded = true },
             onMapClick = {
                 marker.value = MarkerState(LatLng(it.latitude, it.longitude))
                 viewModel.getStateInfoByLocation(it.latitude, it.longitude)
-            }
-        ) {
+            }) {
             Marker(
                 state = marker.value,
                 title = currentLocation.value?.country ?: "",
@@ -125,17 +113,15 @@ fun LocationSelectionUI(showBottomNabBar: MutableState<Boolean>, onNavigateToHom
                     try {
                         val city = cities.value.filter {
                             it.getFullText(null).toString()
-                                .contains(autocompletePlace.primaryText) &&
-                                    it.getFullText(null).toString()
-                                        .contains(autocompletePlace.secondaryText)
+                                .contains(autocompletePlace.primaryText) && it.getFullText(null)
+                                .toString().contains(autocompletePlace.secondaryText)
                         }
                         val position: LatLng
                         if (city.isNotEmpty()) {
                             val location = viewModel.getLocationByQuery(
                                 city[0].getFullText(null).toString()
                             )
-                            position =
-                                LatLng(location.lat ?: 0.0, location.lon ?: 0.0)
+                            position = LatLng(location.lat ?: 0.0, location.lon ?: 0.0)
                         } else {
                             position = LatLng(0.0, 0.0)
                         }
@@ -148,8 +134,7 @@ fun LocationSelectionUI(showBottomNabBar: MutableState<Boolean>, onNavigateToHom
                             )
                         }
                         viewModel.getStateInfoByLocation(
-                            position.latitude,
-                            position.longitude
+                            position.latitude, position.longitude
                         )
                     } catch (e: Exception) {
                         Log.d("TAG", "LocationSelectionUI: ${e.message}")
@@ -168,26 +153,25 @@ fun LocationSelectionUI(showBottomNabBar: MutableState<Boolean>, onNavigateToHom
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = currentLocation.value?.country?.getCountryNameFromCode() ?: "",
-                color = Color.White)
+            Text(
+                text = currentLocation.value?.country?.getCountryNameFromCode() ?: "",
+                color = Color.White
+            )
             Text(text = currentLocation.value?.state ?: "", color = Color.White)
             Button(onClick = {
                 viewModel.insertWeather(
                     LatLng(
-                        currentLocation.value?.lat ?: 0.0,
-                        currentLocation.value?.lon ?: 0.0
+                        currentLocation.value?.lat ?: 0.0, currentLocation.value?.lon ?: 0.0
                     )
                 )
                 onNavigateToHome()
                 val lat = currentLocation.value?.lat ?: 0.0
                 val lon = currentLocation.value?.lon ?: 0.0
 
-                sharedPreferences.edit()
-                    .putString("lat", lat.toString())
-                    .putString("lon", lon.toString())
-                    .commit()
+                sharedPreferences.edit().putString("lat", lat.toString())
+                    .putString("lon", lon.toString()).commit()
             }) {
-                Text(text = "Select location")
+                Text(text = stringResource(R.string.select_location))
             }
 
         }

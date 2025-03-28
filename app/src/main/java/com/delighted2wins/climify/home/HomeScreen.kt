@@ -30,19 +30,23 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.delighted2wins.climify.R
 import com.delighted2wins.climify.Response
-import com.delighted2wins.climify.data.local.WeatherDatabase
-import com.delighted2wins.climify.data.local.WeathersLocalDataSourceImpl
+import com.delighted2wins.climify.data.local.db.WeatherDatabase
+import com.delighted2wins.climify.data.local.db.WeathersLocalDataSourceImpl
+import com.delighted2wins.climify.data.local.preferences.PreferencesDataSourceImpl
 import com.delighted2wins.climify.data.remote.RetrofitClient
 import com.delighted2wins.climify.data.remote.WeatherRemoteDataSourceImpl
 import com.delighted2wins.climify.data.repo.WeatherRepositoryImpl
+import com.delighted2wins.climify.enums.Language
+import com.delighted2wins.climify.enums.LocationSource
+import com.delighted2wins.climify.enums.TempUnit
 import com.delighted2wins.climify.home.components.DisplayHomeData
 import com.delighted2wins.climify.home.components.LoadingIndicator
 import com.delighted2wins.climify.utils.Constants
+import com.delighted2wins.climify.utils.getUserLocationUsingGps
 
 @Composable
 fun HomeUi(
-    showBottomNabBar: MutableState<Boolean>,
-    onNavigateToLocationSelection: () -> Unit
+    showBottomNabBar: MutableState<Boolean>, onNavigateToLocationSelection: () -> Unit
 ) {
     showBottomNabBar.value = true
 
@@ -50,15 +54,21 @@ fun HomeUi(
     val viewModel: HomeViewModel = viewModel(
         factory = HomeViewModelFactory(getRepo(context))
     )
-    val sharedPreferences =
-        context.getSharedPreferences(Constants.PREF_NAME, Context.MODE_PRIVATE)
-    val lat = sharedPreferences.getString("lat", "0.0") ?: "0.0"
-    val lon = sharedPreferences.getString("lon", "0.0") ?: "0.0"
-    val lang = sharedPreferences.getString("lang", "en") ?: "en"
-    val tempUnit = sharedPreferences.getString("temp", "metric") ?: "metric"
+
+    val lang = viewModel.getData<Language>(Constants.KEY_LANG).value
+    val tempUnit = viewModel.getData<TempUnit>(Constants.KEY_TEMP_UNIT).value
+    val userLocation = viewModel.getData<LocationSource>(Constants.KEY_LOCATION_SOURCE).value
+
 
     LaunchedEffect(Unit) {
-        viewModel.fetchWeatherData(lat.toDouble(), lon.toDouble(), tempUnit, lang)
+        if (userLocation == LocationSource.MAP.value) {
+            val (lat, lon) = viewModel.getData<Pair<Double, Double>>("")
+            viewModel.fetchWeatherData(lat, lon, tempUnit, lang)
+        } else {
+            context.getUserLocationUsingGps { lat, lon ->
+                viewModel.fetchWeatherData(lat, lon, tempUnit, lang)
+            }
+        }
     }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -70,10 +80,7 @@ fun HomeUi(
         is Response.Success -> {
             val (currentWeather, forecastHours, forecastDays) = (uiState as Response.Success).data
             DisplayHomeData(
-                currentWeather!!,
-                onNavigateToLocationSelection,
-                forecastHours,
-                forecastDays
+                currentWeather!!, onNavigateToLocationSelection, forecastHours, forecastDays
             )
         }
 
@@ -81,8 +88,7 @@ fun HomeUi(
             val error = (uiState as Response.Failure).error
             val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.error3))
             val progress by animateLottieCompositionAsState(
-                composition = composition,
-                iterations = 1
+                composition = composition, iterations = 1
             )
             Column {
                 Spacer(Modifier.height(24.dp))
@@ -115,18 +121,11 @@ fun HomeUi(
 }
 
 fun getRepo(context: Context) = WeatherRepositoryImpl(
-    WeatherRemoteDataSourceImpl(RetrofitClient.service),
-    WeathersLocalDataSourceImpl(
-        WeatherDatabase.getInstance(context.applicationContext).getWeatherDao(),
+    WeatherRemoteDataSourceImpl(RetrofitClient.service), WeathersLocalDataSourceImpl(
+        WeatherDatabase.getInstance(context.applicationContext).getWeatherDao()
+    ), PreferencesDataSourceImpl(
+        context.getSharedPreferences(
+            Constants.PREF_NAME, Context.MODE_PRIVATE
+        )
     )
 )
-
-
-
-
-
-
-
-
-
-

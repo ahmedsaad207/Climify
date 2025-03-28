@@ -2,6 +2,7 @@ package com.delighted2wins.climify.domainmodel
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.delighted2wins.climify.enums.TempUnit
 
 @Entity
 data class CurrentWeather(
@@ -13,7 +14,7 @@ data class CurrentWeather(
     var timeText: String,
     var icon: Int,
     var background: Int,
-    var temp: Double,
+    var temp: String,
     var tempMin: Double,
     val tempMax: Double,
     var pressure: String,
@@ -23,5 +24,6 @@ data class CurrentWeather(
     var lat: Double,
     var long: Double,
     var description: String,
-    var country: String
+    var country: String,
+    var unit: String = TempUnit.METRIC.value
 )

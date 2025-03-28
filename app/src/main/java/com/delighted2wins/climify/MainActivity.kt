@@ -40,10 +40,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.delighted2wins.climify.enums.Language
+import com.delighted2wins.climify.home.getRepo
+import com.delighted2wins.climify.utils.Constants
+import com.delighted2wins.climify.utils.updateAppLanguage
+import com.delighted2wins.climify.worker.AppViewModelFactory
 import com.google.android.libraries.places.api.Places
 
 class MainActivity : ComponentActivity() {
@@ -51,9 +58,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val viewModel =
+            ViewModelProvider(this, AppViewModelFactory(getRepo(this)))[AppViewModel::class.java]
+        val lang = viewModel.getData(Constants.KEY_LANG) as Language
+
         if (!Places.isInitialized()) {
-            Places.initialize(this.applicationContext, "AIzaSyCaj10hgcwGaosoYRyv79ppLviFJ9eMNmM")
+            Places.initialize(this.applicationContext, BuildConfig.PlacesApiKey)
         }
+
+
+        updateAppLanguage(lang.value)
 
         setContent {
             val showFloatingActionButton = remember { mutableStateOf(false) }
@@ -68,7 +82,7 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .wrapContentHeight(),
-                            containerColor = Color(0xff151513)
+                            containerColor = colorResource(R.color.grayish_black)
                         ) {
                             BottomNavigationBar(
                                 navController,
@@ -84,7 +98,7 @@ class MainActivity : ComponentActivity() {
                             showFloatingActionButton.value = false
                             navController.navigate(Screen.LocationSelection)
                         }) {
-                            Icon(Icons.Default.LocationOn, contentDescription = "Add Item")
+                            Icon(Icons.Default.LocationOn, contentDescription = stringResource(R.string.add_item))
                         }
                     }
                 },

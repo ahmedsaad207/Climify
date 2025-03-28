@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="last_update">"اخر تحديث: "</string>
+    <string name="today">اليوم</string>
+    <string name="humidity">الرطوبه</string>
+    <string name="pressure">الضغط</string>
+    <string name="hpa">هكتوباسكال</string>
+    <string name="wind">الرياح</string>
+    <string name="clouds">الرياح</string>
+    <string name="percentage_symbol">٪</string>
+    <string name="upcoming_forecast">الايام القادمه</string>
+    <string name="favorite_locations">المواقع المفضلة</string>
+    <string name="no_favorite_locations_found_add_some_to_get_started">لم يتم العثور على مواقع مفضلة. أضف البعض للبدء!</string>
+    <string name="last_update_with_date">آخر تحديث: %1$s</string>
+    <string name="location_deleted_successfully">تم حذف الموقع بنجاح</string>
+    <string name="undo">تراجع</string>
+    <string name="select_location">حدد الموقع</string>
+    <string name="language">اللغة</string>
+    <string name="default_lang">"لغة النظام "</string>
+    <string name="temp_unit">وحدة الحرارة</string>
+    <string name="kelvin">كيلفن ك</string>
+    <string name="celsius">درجة مئوية °م</string>
+    <string name="fahrenheit">درجة فهرنهايت °ف</string>
+    <string name="wind_speed_unit">وحدة سرعة الرياح</string>
+    <string name="meter_sec">متر/ثانية</string>
+    <string name="mile_hour">ميل/ساعة</string>
+    <string name="select_your_location">حدد موقعك</string>
+    <string name="auto_detect_gps">اكتشاف تلقائي (GPS)</string>
+    <string name="using_map">استخدام الخريطة</string>
+    <string name="celsius_symbol">°م</string>
+    <string name="now">الان</string>
+    <string name="add_item">اضافة عنصر</string>
+    <string name="kelvin_symbol">ك</string>
+    <string name="fahrenheit_symbol">°ف</string>
+</resources>
