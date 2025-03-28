@@ -9,11 +9,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.delighted2wins.climify.R
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
@@ -53,7 +55,7 @@ fun WeatherDetailsSection(
         Text(
             text = label,
             fontSize = 20.sp,
-            color = Color(0xFF808080),
+            color = colorResource(R.color.neutral_gray),
             fontWeight = FontWeight.Normal
         )
     }

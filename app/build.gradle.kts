@@ -1,3 +1,4 @@
+
 import java.io.FileInputStream
 import java.util.Properties
 
@@ -17,7 +18,6 @@ android {
     properties.load(FileInputStream(file))
 
     defaultConfig {
-
         applicationId = "com.delighted2wins.climify"
         minSdk = 24
         targetSdk = 35
@@ -26,6 +26,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "ApiKey", properties.getProperty("apikey"))
+        buildConfigField("String", "PlacesApiKey", properties.getProperty("places-api-key"))
+        resValue ("string", "places_api_key", properties.getProperty("places-api-key"))
     }
 
     buildTypes {

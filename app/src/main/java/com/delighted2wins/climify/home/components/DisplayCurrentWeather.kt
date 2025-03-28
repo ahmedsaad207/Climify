@@ -30,6 +30,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -38,6 +40,9 @@ import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.delighted2wins.climify.R
 import com.delighted2wins.climify.domainmodel.CurrentWeather
+import com.delighted2wins.climify.utils.getTempUnitSymbol
+import com.delighted2wins.climify.utils.getWindSpeedUnitSymbol
+import com.delighted2wins.climify.utils.toLocalizedNumber
 import com.delighted2wins.climify.weatherdetails.BackButton
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 
@@ -50,6 +55,7 @@ fun DisplayCurrentWeather(
     onNavigateBack: () -> Unit = {},
     isLocal: Boolean = false
 ) {
+    val context = LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -117,22 +123,22 @@ fun DisplayCurrentWeather(
                     Icons.Default.LocationOn,
                     contentDescription = null,
                     modifier = Modifier.padding(start = 16.dp, end = 4.dp),
-                    tint = Color.White
+                    tint = colorResource(R.color.white)
                 )
                 Text(
                     text = currentWeather.city,
                     fontSize = 20.sp,
                     modifier = Modifier.wrapContentWidth(),
                     fontWeight = FontWeight.Medium,
-                    color = Color.White
+                    color = colorResource(R.color.white)
                 )
                 Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.White)
             }
             if (isLocal) {
                 Text(
-                    text = "Last update:",
+                    text = stringResource(R.string.last_update),
                     fontSize = 14.sp,
-                    color = Color(0xFFFFFFFF),
+                    color = colorResource(R.color.white),
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier
                         .padding(start = 48.dp, top = 24.dp)
@@ -156,15 +162,15 @@ fun DisplayCurrentWeather(
                         .fillMaxWidth()
                         .weight(1f)
                         .padding(start = 24.dp),
-                    color = Color.White
+                    color = colorResource(R.color.white)
                 )
                 Column {
                     Text(
-                        text = "Today",
+                        text = stringResource(R.string.today),
                         fontSize = 40.sp,
                         modifier = Modifier.padding(end = 24.dp),
                         fontWeight = FontWeight.Medium,
-                        color = Color.White
+                        color = colorResource(R.color.white)
                     )
                     Text(
                         text = currentWeather.dateText,
@@ -185,12 +191,24 @@ fun DisplayCurrentWeather(
             )
 
             // Temp
-            Text(
-                text = "${currentWeather.temp.toInt()}\u00B0",
-                fontSize = 63.sp,
-                color = Color.White,
-                modifier = Modifier.padding(top = 6.dp),
-            )
+            Row(
+                modifier = Modifier.padding(top = 6.dp)
+            ) {
+                Text(
+                    text = currentWeather.temp,
+                    fontSize = 63.sp,
+                    color = Color.White,
+                )
+
+                Text(
+                    text = context.getTempUnitSymbol(currentWeather.unit),
+                    fontSize = 30.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Normal,
+                    modifier = Modifier.align(Alignment.Top).padding(start = 8.dp)
+                )
+
+            }
             // Description
             Text(
                 text = currentWeather.description,
@@ -220,8 +238,8 @@ fun DisplayCurrentWeather(
                     WeatherDetailsSection(
                         R.drawable.humidity,
                         currentWeather.humidity,
-                        "Humidity",
-                        "%"
+                        stringResource(R.string.humidity),
+                        stringResource(R.string.percentage_symbol)
                     )
                 }
                 Box(
@@ -235,8 +253,8 @@ fun DisplayCurrentWeather(
                     WeatherDetailsSection(
                         R.drawable.pressure,
                         currentWeather.pressure,
-                        "Pressure",
-                        "hPa"
+                        stringResource(R.string.pressure),
+                        stringResource(R.string.hpa)
                     )
                 }
 
@@ -251,15 +269,18 @@ fun DisplayCurrentWeather(
                     modifier = Modifier
                         .padding(start = 16.dp)
                         .weight(1f)
-                        .background(color = Color(0xff1E1F1C), shape = RoundedCornerShape(24.dp))
+                        .background(
+                            color = colorResource(R.color.grayish_green),
+                            shape = RoundedCornerShape(24.dp)
+                        )
                         .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     WeatherDetailsSection(
                         R.drawable.wind,
-                        "${currentWeather.windSpeed} ",
-                        "Wind",
-                        "m/s"
+                        "${currentWeather.windSpeed.toInt().toLocalizedNumber()} ",
+                        stringResource(R.string.wind),
+                        context.getWindSpeedUnitSymbol(currentWeather.unit)
                     )
                 }
 
@@ -267,15 +288,18 @@ fun DisplayCurrentWeather(
                     modifier = Modifier
                         .padding(end = 16.dp)
                         .weight(1f)
-                        .background(color = Color(0xff1E1F1C), shape = RoundedCornerShape(24.dp))
+                        .background(
+                            color = colorResource(R.color.grayish_green),
+                            shape = RoundedCornerShape(24.dp)
+                        )
                         .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     WeatherDetailsSection(
                         R.drawable._3d,
                         currentWeather.cloud,
-                        "Clouds",
-                        "%"
+                        stringResource(R.string.clouds),
+                        stringResource(R.string.percentage_symbol)
                     )
                 }
             }

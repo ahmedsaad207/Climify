@@ -1,7 +1,6 @@
 package com.delighted2wins.climify.home
 
 import android.content.Context
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -40,15 +39,14 @@ import com.delighted2wins.climify.data.repo.WeatherRepositoryImpl
 import com.delighted2wins.climify.enums.Language
 import com.delighted2wins.climify.enums.LocationSource
 import com.delighted2wins.climify.enums.TempUnit
-import com.delighted2wins.climify.enums.WindSpeedUnit
 import com.delighted2wins.climify.home.components.DisplayHomeData
 import com.delighted2wins.climify.home.components.LoadingIndicator
 import com.delighted2wins.climify.utils.Constants
+import com.delighted2wins.climify.utils.getUserLocationUsingGps
 
 @Composable
 fun HomeUi(
-    showBottomNabBar: MutableState<Boolean>,
-    onNavigateToLocationSelection: () -> Unit
+    showBottomNabBar: MutableState<Boolean>, onNavigateToLocationSelection: () -> Unit
 ) {
     showBottomNabBar.value = true
 
@@ -57,16 +55,20 @@ fun HomeUi(
         factory = HomeViewModelFactory(getRepo(context))
     )
 
-    val (lat, lon) = viewModel.getData<Pair<Double, Double>>("")
     val lang = viewModel.getData<Language>(Constants.KEY_LANG).value
     val tempUnit = viewModel.getData<TempUnit>(Constants.KEY_TEMP_UNIT).value
-    val windSpeedUnit = viewModel.getData<WindSpeedUnit>(Constants.KEY_WIND_SPEED_UNIT).value
     val userLocation = viewModel.getData<LocationSource>(Constants.KEY_LOCATION_SOURCE).value
 
-    Log.i("TAG", "HomeUi: lang: $lang, temp unit: $tempUnit, wind unit: $windSpeedUnit, user loc: $userLocation,  lat/long: $lat,   $lon")
 
     LaunchedEffect(Unit) {
-        viewModel.fetchWeatherData(lat, lon, tempUnit, lang)
+        if (userLocation == LocationSource.MAP.value) {
+            val (lat, lon) = viewModel.getData<Pair<Double, Double>>("")
+            viewModel.fetchWeatherData(lat, lon, tempUnit, lang)
+        } else {
+            context.getUserLocationUsingGps { lat, lon ->
+                viewModel.fetchWeatherData(lat, lon, tempUnit, lang)
+            }
+        }
     }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -78,10 +80,7 @@ fun HomeUi(
         is Response.Success -> {
             val (currentWeather, forecastHours, forecastDays) = (uiState as Response.Success).data
             DisplayHomeData(
-                currentWeather!!,
-                onNavigateToLocationSelection,
-                forecastHours,
-                forecastDays
+                currentWeather!!, onNavigateToLocationSelection, forecastHours, forecastDays
             )
         }
 
@@ -89,8 +88,7 @@ fun HomeUi(
             val error = (uiState as Response.Failure).error
             val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.error3))
             val progress by animateLottieCompositionAsState(
-                composition = composition,
-                iterations = 1
+                composition = composition, iterations = 1
             )
             Column {
                 Spacer(Modifier.height(24.dp))
@@ -123,24 +121,11 @@ fun HomeUi(
 }
 
 fun getRepo(context: Context) = WeatherRepositoryImpl(
-    WeatherRemoteDataSourceImpl(RetrofitClient.service),
-    WeathersLocalDataSourceImpl(
+    WeatherRemoteDataSourceImpl(RetrofitClient.service), WeathersLocalDataSourceImpl(
         WeatherDatabase.getInstance(context.applicationContext).getWeatherDao()
-    ),
-    PreferencesDataSourceImpl(
+    ), PreferencesDataSourceImpl(
         context.getSharedPreferences(
-            Constants.PREF_NAME,
-            Context.MODE_PRIVATE
+            Constants.PREF_NAME, Context.MODE_PRIVATE
         )
     )
 )
-
-
-
-
-
-
-
-
-
-

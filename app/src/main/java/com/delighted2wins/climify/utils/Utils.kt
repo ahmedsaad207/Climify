@@ -1,7 +1,13 @@
 package com.delighted2wins.climify.utils
 
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.util.Log
 import com.delighted2wins.climify.R
 import com.delighted2wins.climify.domainmodel.ForecastWeather
+import com.google.android.gms.location.LocationServices
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -65,8 +71,7 @@ fun getBackgroundDrawableFromIconCode(iconCode: String): Int {
 }
 
 fun filterForecastToHoursAndDays(
-    currentWeather: ForecastWeather,
-    forecastList: List<ForecastWeather>
+    currentWeather: ForecastWeather, forecastList: List<ForecastWeather>
 ): Pair<List<ForecastWeather>, List<ForecastWeather>> {
     val hours = mutableListOf<ForecastWeather>()
     val days = mutableListOf<ForecastWeather>()
@@ -74,10 +79,10 @@ fun filterForecastToHoursAndDays(
 
     val calendar = Calendar.getInstance()
     val currentDate = calendar.time
-    val formattedCurrentDate =
-        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(currentDate)
+    val formattedCurrentDate = SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(currentDate)
 
     forecastList.forEach { weather ->
+        Log.i("TAG", "filterForecastToHoursAndDays: ${weather.dateText}")
         val dateAndTime = weather.dateText.split(" ")
         if (dateAndTime.contains(formattedCurrentDate)) {
             hours.add(weather)
@@ -89,3 +94,64 @@ fun filterForecastToHoursAndDays(
     }
     return Pair(hours, days)
 }
+
+fun Context.updateAppLanguage(languageCode: String) {
+    val locale = Locale(languageCode)
+    Locale.setDefault(locale)
+
+    val config = resources.configuration
+    config.setLocale(locale)
+    resources.updateConfiguration(config, resources.displayMetrics)
+}
+
+fun Context.restartActivity() {
+    val intent = (this as Activity).intent
+    intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+    this.startActivity(intent)
+    (this as? Activity)?.finish()
+}
+
+private fun convertToArabicNumbers(number: String): String {
+    val arabicDigits = arrayOf('٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩')
+    return number.map { if (it.isDigit()) arabicDigits[it.digitToInt()] else it }.joinToString("")
+}
+
+fun Int.toLocalizedNumber(): String {
+    val language = Locale.getDefault().language
+    return if (language == "ar") convertToArabicNumbers(this.toString()) else this.toString()
+}
+
+
+fun Context.getTempUnitSymbol(unit: String): String {
+    return when (unit) {
+        "standard" -> getString(R.string.kelvin_symbol)
+        "metric" -> getString(R.string.celsius_symbol)
+        "imperial" -> getString(R.string.fahrenheit_symbol)
+        else -> getString(R.string.celsius_symbol)
+    }
+}
+
+fun Context.getWindSpeedUnitSymbol(unit: String): String {
+    return when (unit) {
+        "standard" -> getString(R.string.meter_sec)
+        "metric" -> getString(R.string.meter_sec)
+        "imperial" -> getString(R.string.mile_hour)
+        else -> getString(R.string.meter_sec)
+    }
+}
+
+@SuppressLint("MissingPermission")
+fun Context.getUserLocationUsingGps(onResult: (latitude: Double, longitude: Double) -> Unit) {
+    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            if (location != null) {
+                onResult(location.latitude, location.longitude)
+            } else {
+                onResult(0.0, 0.0)
+            }
+        }.addOnFailureListener {
+            onResult(0.0, 0.0)
+        }
+}
+

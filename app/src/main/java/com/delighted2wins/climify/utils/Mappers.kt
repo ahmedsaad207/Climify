@@ -12,13 +12,13 @@ fun CurrentWeatherResponse.toCurrentWeather(): CurrentWeather {
         dateText = timeStampToHumanDate(dt?.toLong() ?: 0L, "EEE, dd MMM"),
         timeText = timeStampToHumanDate(dt?.toLong() ?: 0L, "h:mm a"),
         icon = getDrawableFromIconCode(weather[0].icon ?: "0"),
-        temp = main?.temp ?: 0.0,
+        temp = main?.temp?.toInt()?.toLocalizedNumber() ?: "0",
         tempMin = main?.tempMin ?: 0.0,
         tempMax = main?.tempMax ?: 0.0,
-        pressure = if (main?.pressure != null) "${main?.pressure} " else "0",
-        humidity = if (main?.humidity != null) "${main?.humidity} " else "0",
+        pressure = if (main?.pressure != null) "${main?.pressure?.toLocalizedNumber()} " else "0",
+        humidity = if (main?.humidity != null) "${main?.humidity?.toLocalizedNumber()} " else "0",
         windSpeed = wind?.speed ?: 0.0,
-        cloud = if (clouds?.all != null) "${clouds?.all} " else "0",
+        cloud = if (clouds?.all != null) "${clouds?.all?.toLocalizedNumber()} " else "0",
         description = weather[0].description ?: "",
         lat = coord?.lat ?: 0.0,
         long = coord?.lon ?: 0.0,
@@ -28,7 +28,7 @@ fun CurrentWeatherResponse.toCurrentWeather(): CurrentWeather {
     )
 }
 
-fun UpcomingForecastResponse.toForecastWeatherList(): List<ForecastWeather> {
+fun UpcomingForecastResponse.toForecastWeatherList(unit: String): List<ForecastWeather> {
     val forecastWeathers = arrayListOf<ForecastWeather>()
     forecastWeatherList.forEach {
         forecastWeathers.add(
@@ -36,11 +36,12 @@ fun UpcomingForecastResponse.toForecastWeatherList(): List<ForecastWeather> {
                 date = it.dt ?: 0,
                 time = timeStampToHumanDate(it.dt?.toLong() ?: 0L, "h:mm a"),
                 icon = getDrawableFromIconCode(it.weathers[0].icon ?: "0"),
-                temp = it.main?.temp ?: 0.0,
+                temp = it.main?.temp?.toInt()?.toLocalizedNumber() ?: "0",
                 tempMin = it.main?.tempMin ?: 0.0,
                 tempMax = it.main?.tempMax ?: 0.0,
                 description = it.weathers[0].description ?: "",
                 dateText = it.dtTxt ?: "",
+                unit = unit
             )
         )
 

@@ -72,7 +72,7 @@ class WeatherDetailsViewModel(private val repository: WeatherRepository) : ViewM
                             _uiState.value = Response.Failure(e.message.toString())
                         }
                         .map {
-                            it.toForecastWeatherList()
+                            it.toForecastWeatherList(units)
                         }
                         .firstOrNull()
                 }
@@ -82,7 +82,7 @@ class WeatherDetailsViewModel(private val repository: WeatherRepository) : ViewM
 
                 if (currentWeather != null && upcomingForecast != null) {
                     val (hours, days) = filterForecastToHoursAndDays(
-                        currentWeather.toForecastWeather(),
+                        currentWeather.toForecastWeather().apply { unit = units },
                         upcomingForecast
                     )
                     val data = Triple(currentWeather, hours, days)
