@@ -4,9 +4,10 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import com.delighted2wins.climify.R
 import com.delighted2wins.climify.domainmodel.ForecastWeather
+import com.delighted2wins.climify.enums.TempUnit
+import com.delighted2wins.climify.enums.WindSpeedUnit
 import com.google.android.gms.location.LocationServices
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -82,7 +83,6 @@ fun filterForecastToHoursAndDays(
     val formattedCurrentDate = SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(currentDate)
 
     forecastList.forEach { weather ->
-        Log.i("TAG", "filterForecastToHoursAndDays: ${weather.dateText}")
         val dateAndTime = weather.dateText.split(" ")
         if (dateAndTime.contains(formattedCurrentDate)) {
             hours.add(weather)
@@ -145,13 +145,54 @@ fun Context.getUserLocationUsingGps(onResult: (latitude: Double, longitude: Doub
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
     fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-            if (location != null) {
-                onResult(location.latitude, location.longitude)
-            } else {
-                onResult(0.0, 0.0)
-            }
-        }.addOnFailureListener {
+        if (location != null) {
+            onResult(location.latitude, location.longitude)
+        } else {
             onResult(0.0, 0.0)
         }
+    }.addOnFailureListener {
+        onResult(0.0, 0.0)
+    }
 }
+
+fun String.convertTemp(value: Double, appUnit: String): Double {
+    return when (appUnit) {
+        TempUnit.STANDARD.value -> when (this) {  // Convert to Kelvin
+            TempUnit.METRIC.value -> value + 273.15  // Celsius to Kelvin
+            TempUnit.IMPERIAL.value -> (value - 32) * 5.0 / 9.0 + 273.15  // Fahrenheit to Kelvin
+            else -> value  // Already in Kelvin
+        }
+
+        TempUnit.METRIC.value -> when (this) {  // Convert to Celsius
+            TempUnit.STANDARD.value -> value - 273.15  // Kelvin to Celsius
+            TempUnit.IMPERIAL.value -> (value - 32) * 5.0 / 9.0  // Fahrenheit to Celsius
+            else -> value  // Already in Celsius
+        }
+
+        TempUnit.IMPERIAL.value -> when (this) {  // Convert to Fahrenheit
+            TempUnit.STANDARD.value -> (value - 273.15) * 9.0 / 5.0 + 32  // Kelvin to Fahrenheit
+            TempUnit.METRIC.value -> (value * 9.0 / 5.0) + 32  // Celsius to Fahrenheit
+            else -> value  // Already in Fahrenheit
+        }
+
+        else -> value
+    }
+}
+
+fun String.convertWindSpeed(value: Double, appUnit: String): Double {
+    return when (appUnit) {
+        WindSpeedUnit.STANDARD.value, WindSpeedUnit.METRIC.value -> when (this) {
+            WindSpeedUnit.IMPERIAL.value -> value * 0.44704  // mph to m/s
+            else -> value  // Already in m/s (standard & metric are the same)
+        }
+
+        WindSpeedUnit.IMPERIAL.value -> when (this) {
+            WindSpeedUnit.STANDARD.value, WindSpeedUnit.METRIC.value -> value * 2.23694  // m/s to mph
+            else -> value  // Already in mph
+        }
+
+        else -> value  // Default case (if appUnit is invalid)
+    }
+}
+
 

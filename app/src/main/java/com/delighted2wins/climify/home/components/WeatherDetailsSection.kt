@@ -34,13 +34,13 @@ fun WeatherDetailsSection(
             contentDescription = null,
             modifier = Modifier.size(48.dp)
         )
-        // Temp
+        // value
         Row {
             Text(
                 text = value,
                 fontSize = 20.sp,
                 color = Color.White,
-                modifier = Modifier.padding(top = 6.dp),
+                modifier = Modifier.padding(top = 6.dp, end = 6.dp),
             )
             Text(
                 text = unit,

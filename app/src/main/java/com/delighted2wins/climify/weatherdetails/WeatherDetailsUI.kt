@@ -1,6 +1,5 @@
 package com.delighted2wins.climify.weatherdetails
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,9 +24,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.delighted2wins.climify.Response
+import com.delighted2wins.climify.enums.TempUnit
 import com.delighted2wins.climify.home.components.DisplayHomeData
 import com.delighted2wins.climify.home.components.LoadingIndicator
 import com.delighted2wins.climify.home.getRepo
+import com.delighted2wins.climify.utils.Constants
 
 @Composable
 fun DetailsUI(
@@ -50,7 +51,7 @@ fun DetailsUI(
     }
 
     // check internet if internet available get from api all data if not get from room
-    var isInternetAvailable by remember { mutableStateOf(true) }
+    var isInternetAvailable by remember { mutableStateOf(false) }
 
     LaunchedEffect(weather) {
         weather?.let {
@@ -62,9 +63,8 @@ fun DetailsUI(
         is Response.Loading -> LoadingIndicator()
 
         is Response.Success -> {
-            Log.i("TAG", "fetchWeatherData: success")
-
             val (currentWeather, forecastHours, forecastDays) = (uiState as Response.Success).data
+            val appUnit = viewModel.getData<TempUnit>(Constants.KEY_TEMP_UNIT).value
             Column {
                 DisplayHomeData(
                     currentWeather,
@@ -72,7 +72,8 @@ fun DetailsUI(
                     forecastDays = forecastDays,
                     isOnline = isInternetAvailable,
                     backButton = true,
-                    onNavigateBack = onNavigateBack
+                    onNavigateBack = onNavigateBack,
+                    appUnit = appUnit
                 )
             }
         }
@@ -96,15 +97,17 @@ fun DetailsUI(
 fun BackButton(onNavigateBack: () -> Unit) {
     Box(
         modifier = Modifier
-            .size(60.dp)
+            .size(48.dp)
             .background(Color.Black.copy(0.4f), shape = CircleShape),
         contentAlignment = Alignment.Center
     ) {
-        IconButton(onClick = { onNavigateBack() }) {
+        IconButton(onClick = { onNavigateBack() },
+            modifier = Modifier.size(40.dp)) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
-                tint = Color.White
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
             )
         }
     }

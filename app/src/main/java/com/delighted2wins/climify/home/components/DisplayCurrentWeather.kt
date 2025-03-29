@@ -40,6 +40,8 @@ import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.delighted2wins.climify.R
 import com.delighted2wins.climify.domainmodel.CurrentWeather
+import com.delighted2wins.climify.utils.convertTemp
+import com.delighted2wins.climify.utils.convertWindSpeed
 import com.delighted2wins.climify.utils.getTempUnitSymbol
 import com.delighted2wins.climify.utils.getWindSpeedUnitSymbol
 import com.delighted2wins.climify.utils.toLocalizedNumber
@@ -49,13 +51,39 @@ import com.google.accompanist.drawablepainter.rememberDrawablePainter
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun DisplayCurrentWeather(
-    onNavigateToLocationSelection: () -> Unit = {},
+    onNavigateToLocationSelection: (Boolean) -> Unit = {},
     currentWeather: CurrentWeather,
     backButton: Boolean,
     onNavigateBack: () -> Unit = {},
-    isLocal: Boolean = false
+    isLocal: Boolean = false,
+    appUnit: String
 ) {
     val context = LocalContext.current
+    val temp: String
+    val unit: String
+    val windSpeedValue: String
+    val windSpeedUnit: String
+
+    if (isLocal) {
+        unit = context.getTempUnitSymbol(appUnit)
+        windSpeedUnit = context.getWindSpeedUnitSymbol(appUnit)
+        temp = currentWeather.unit.convertTemp(currentWeather.temp.toDouble(), appUnit).toInt()
+            .toLocalizedNumber()
+
+        windSpeedValue =
+            currentWeather.unit.convertWindSpeed(currentWeather.windSpeed, appUnit).toInt()
+                .toLocalizedNumber()
+    } else {
+        temp = currentWeather.temp
+        unit = context.getTempUnitSymbol(currentWeather.unit)
+        windSpeedUnit = context.getWindSpeedUnitSymbol(currentWeather.unit)
+        windSpeedValue = currentWeather.windSpeed.toInt().toLocalizedNumber()
+    }
+
+    val pressure = currentWeather.pressure.trim().toInt().toLocalizedNumber()
+    val cloud = currentWeather.cloud.trim().toInt().toLocalizedNumber()
+    val humidity = currentWeather.humidity.trim().toInt().toLocalizedNumber()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -113,7 +141,7 @@ fun DisplayCurrentWeather(
                     .padding(vertical = 24.dp, horizontal = 6.dp)
                     .align(if (backButton) Alignment.CenterHorizontally else Alignment.Start)
                     .clickable {
-                        onNavigateToLocationSelection()
+                        onNavigateToLocationSelection(false)
                     }
                     .background(Color.Black.copy(0.4f), shape = RoundedCornerShape(8.dp))
                     .padding(4.dp),
@@ -195,17 +223,19 @@ fun DisplayCurrentWeather(
                 modifier = Modifier.padding(top = 6.dp)
             ) {
                 Text(
-                    text = currentWeather.temp,
+                    text = temp,
                     fontSize = 63.sp,
                     color = Color.White,
                 )
 
                 Text(
-                    text = context.getTempUnitSymbol(currentWeather.unit),
+                    text = unit,
                     fontSize = 30.sp,
                     color = Color.White,
                     fontWeight = FontWeight.Normal,
-                    modifier = Modifier.align(Alignment.Top).padding(start = 8.dp)
+                    modifier = Modifier
+                        .align(Alignment.Top)
+                        .padding(start = 8.dp)
                 )
 
             }
@@ -237,7 +267,7 @@ fun DisplayCurrentWeather(
                 ) {
                     WeatherDetailsSection(
                         R.drawable.humidity,
-                        currentWeather.humidity,
+                        humidity,
                         stringResource(R.string.humidity),
                         stringResource(R.string.percentage_symbol)
                     )
@@ -252,7 +282,7 @@ fun DisplayCurrentWeather(
                 ) {
                     WeatherDetailsSection(
                         R.drawable.pressure,
-                        currentWeather.pressure,
+                        pressure,
                         stringResource(R.string.pressure),
                         stringResource(R.string.hpa)
                     )
@@ -278,9 +308,9 @@ fun DisplayCurrentWeather(
                 ) {
                     WeatherDetailsSection(
                         R.drawable.wind,
-                        "${currentWeather.windSpeed.toInt().toLocalizedNumber()} ",
+                        windSpeedValue,
                         stringResource(R.string.wind),
-                        context.getWindSpeedUnitSymbol(currentWeather.unit)
+                        windSpeedUnit
                     )
                 }
 
@@ -297,7 +327,7 @@ fun DisplayCurrentWeather(
                 ) {
                     WeatherDetailsSection(
                         R.drawable._3d,
-                        currentWeather.cloud,
+                        cloud,
                         stringResource(R.string.clouds),
                         stringResource(R.string.percentage_symbol)
                     )

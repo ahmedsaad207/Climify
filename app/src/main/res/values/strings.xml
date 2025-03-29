@@ -37,4 +37,5 @@
     <string name="add_item">Add Item</string>
     <string name="kelvin_symbol">K</string>
     <string name="fahrenheit_symbol">°F</string>
+    <string name="add_to_favorite">Add to Favorite</string>
 </resources>

@@ -46,7 +46,7 @@ import com.delighted2wins.climify.utils.getUserLocationUsingGps
 
 @Composable
 fun HomeUi(
-    showBottomNabBar: MutableState<Boolean>, onNavigateToLocationSelection: () -> Unit
+    showBottomNabBar: MutableState<Boolean>, onNavigateToLocationSelection: (Boolean) -> Unit
 ) {
     showBottomNabBar.value = true
 
@@ -73,14 +73,13 @@ fun HomeUi(
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-
     when (uiState) {
         is Response.Loading -> LoadingIndicator()
 
         is Response.Success -> {
             val (currentWeather, forecastHours, forecastDays) = (uiState as Response.Success).data
             DisplayHomeData(
-                currentWeather!!, onNavigateToLocationSelection, forecastHours, forecastDays
+                currentWeather!!, onNavigateToLocationSelection, forecastHours, forecastDays, appUnit = tempUnit
             )
         }
 

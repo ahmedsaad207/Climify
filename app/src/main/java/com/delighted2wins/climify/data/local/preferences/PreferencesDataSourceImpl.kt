@@ -27,8 +27,8 @@ class PreferencesDataSourceImpl(private val sharedPreferences: SharedPreferences
             is Pair<*, *> -> {
                 val (lat, lon) = value
                 sharedPreferences.edit()
-                    .putString(Constants.KEY_LAT, lat as String)
-                    .putString(Constants.KEY_LON, lon as String).apply()
+                    .putString(Constants.KEY_LAT, lat.toString())
+                    .putString(Constants.KEY_LON, lon.toString()).apply()
             }
         }
 

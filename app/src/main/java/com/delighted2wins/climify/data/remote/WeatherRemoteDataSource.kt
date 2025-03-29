@@ -2,7 +2,7 @@ package com.delighted2wins.climify.data.remote
 
 import com.delighted2wins.climify.data.model.CurrentWeatherResponse
 import com.delighted2wins.climify.data.model.UpcomingForecastResponse
-import com.delighted2wins.climify.domainmodel.State
+import com.delighted2wins.climify.domainmodel.LocationInfo
 import kotlinx.coroutines.flow.Flow
 
 interface WeatherRemoteDataSource {
@@ -18,9 +18,9 @@ interface WeatherRemoteDataSource {
     suspend fun getStateInfoByLocation(
         lat: Double,
         lon: Double,
-    ): List<State>
+    ): List<LocationInfo>
 
     suspend fun getLocationByQuery(
         query: String
-    ): List<State>
+    ): List<LocationInfo>
 }
