@@ -14,11 +14,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,6 +50,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -61,10 +64,15 @@ import com.bumptech.glide.integration.compose.GlideImage
 import com.delighted2wins.climify.R
 import com.delighted2wins.climify.Response
 import com.delighted2wins.climify.domainmodel.CurrentWeather
+import com.delighted2wins.climify.enums.TempUnit
 import com.delighted2wins.climify.home.components.LoadingIndicator
 import com.delighted2wins.climify.home.getRepo
+import com.delighted2wins.climify.utils.Constants
+import com.delighted2wins.climify.utils.convertTemp
 import com.delighted2wins.climify.utils.getCountryNameFromCode
+import com.delighted2wins.climify.utils.getTempUnitSymbol
 import com.delighted2wins.climify.utils.timeStampToHumanDate
+import com.delighted2wins.climify.utils.toLocalizedNumber
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -87,6 +95,8 @@ fun FavoriteUI(
     LaunchedEffect(Unit) {
         viewModel.getFavoriteWeathers()
     }
+
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     when (uiState) {
@@ -95,6 +105,11 @@ fun FavoriteUI(
         is Response.Success -> {
             val weathers = (uiState as Response.Success).data
             val weathersState = remember { mutableStateOf(weathers) }
+            val appUnit= viewModel.getData<TempUnit>(Constants.KEY_TEMP_UNIT).value
+
+            LaunchedEffect(weathers) {
+                weathersState.value = weathers
+            }
 
             if (weathersState.value.isNotEmpty()) {    // show data
                 LazyColumn(
@@ -116,7 +131,8 @@ fun FavoriteUI(
                     items(
                         items = weathersState.value,
                         key = { it.id }
-                    ) { weather ->
+                    ) {
+                        weather ->
                         SwipeToDeleteContainer(
                             context = context,
                             item = weather,
@@ -127,7 +143,7 @@ fun FavoriteUI(
                             },
                             snackBarHostState = snackBarHostState
                         ) {
-                            FavoriteLocationItem(weather, onNavigateToWeatherDetails)
+                            FavoriteLocationItem(weather, onNavigateToWeatherDetails,appUnit )
                         }
                     }
 
@@ -163,7 +179,7 @@ fun FavoriteUI(
 
         is Response.Failure -> {
             val error = (uiState as Response.Failure).error
-            val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.error3))
+            val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.cloud_error))
             val progress by animateLottieCompositionAsState(
                 composition = composition,
                 iterations = 1
@@ -189,14 +205,14 @@ fun FavoriteUI(
                     LottieAnimation(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(300.dp),
+                            .height(120.dp),
                         composition = composition,
                         progress = { progress },
                     )
                     Text(
                         modifier = Modifier.padding(horizontal = 24.dp),
                         text = error,
-                        fontSize = 18.sp,
+                        fontSize = 24.sp,
                         color = colorResource(R.color.neutral_gray),
                         textAlign = TextAlign.Center
                     )
@@ -208,35 +224,43 @@ fun FavoriteUI(
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun FavoriteLocationItem(weather: CurrentWeather, onNavigateToWeatherDetails: (Int) -> Unit) {
+fun FavoriteLocationItem(weather: CurrentWeather, onNavigateToWeatherDetails: (Int) -> Unit, appUnit: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onNavigateToWeatherDetails(weather.id) }
             .padding(horizontal = 24.dp, vertical = 8.dp)
             .background(colorResource(R.color.grayish_green), shape = RoundedCornerShape(32.dp))
-            .padding(16.dp)
-            .clickable { onNavigateToWeatherDetails(weather.id) }
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
+        val unit = LocalContext.current.getTempUnitSymbol(appUnit)
+        val temp = weather.unit.convertTemp(weather.temp.toDouble(), appUnit).toInt().toLocalizedNumber()
+
         // country, city and description, time
-        Column {
+        Column(
+            modifier = Modifier.weight(1f)
+        ){
             Text(
                 text = weather.country.getCountryNameFromCode() ?: "",
-                fontSize = 18.sp,
+                fontSize = 16.sp,
                 color = colorResource(R.color.neutral_gray),
                 fontWeight = FontWeight.Normal,
-                modifier = Modifier.padding(bottom = 8.dp),
+                modifier = Modifier.padding(bottom = 8.dp)
             )
 
             Text(
                 text = weather.city,
                 fontSize = 24.sp,
                 color = Color.White,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
 
             Text(
                 text = weather.description,
-                fontSize = 20.sp,
+                fontSize = 18.sp,
                 color = Color.White,
                 fontWeight = FontWeight.Normal,
                 modifier = Modifier.padding(top = 8.dp)
@@ -249,30 +273,45 @@ fun FavoriteLocationItem(weather: CurrentWeather, onNavigateToWeatherDetails: (I
                         stringResource(R.string.day_abbr_month_hour_minute_am_pm)
                     )
                 ),
-                fontSize = 14.sp,
+                fontSize = 13.sp,
                 color = colorResource(R.color.neutral_gray),
                 fontWeight = FontWeight.Normal,
                 modifier = Modifier.padding(bottom = 8.dp, top = 8.dp)
             )
 
         }
-        Spacer(Modifier.weight(1f))
 
         // icon and temp
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .width(96.dp)
+                .fillMaxHeight()
         ) {
             GlideImage(
                 model = weather.icon,
                 contentDescription = null,
-                modifier = Modifier.size(96.dp)
+                modifier = Modifier.size(72.dp)
             )
-            Text(
-                text = "${weather.temp.toInt()} °C",
-                fontSize = 20.sp,
-                color = Color.White,
-                fontWeight = FontWeight.SemiBold
-            )
+            Spacer(Modifier.height(15.dp))
+            Row{
+                Text(
+                    text = temp,
+                    fontSize = 24.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = unit,
+                    fontSize = 14.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Normal,
+                    modifier = Modifier
+                        .align(Alignment.Top)
+                        .padding(4.dp)
+                )
+            }
         }
     }
 }
@@ -295,14 +334,14 @@ fun DeleteBackground() {
 }
 
 @Composable
-fun <T> SwipeToDeleteContainer(
+fun SwipeToDeleteContainer(
     context: Context,
-    item: T,
-    onDelete: (T) -> Unit,
-    onRestore: (T) -> Unit = {},
+    item: CurrentWeather,
+    onDelete: (CurrentWeather) -> Unit,
+    onRestore: (CurrentWeather) -> Unit = {},
     animationDuration: Int = 500,
     snackBarHostState: SnackbarHostState,
-    content: @Composable (T) -> Unit
+    content: @Composable (CurrentWeather) -> Unit
 ) {
 
     var isRemoved by remember { mutableStateOf(false) }

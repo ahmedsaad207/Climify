@@ -39,7 +39,7 @@ class FavoriteViewModel(private val repository: WeatherRepository) : ViewModel()
 
     }
 
-    fun insertWeather(weather: CurrentWeather) = viewModelScope.launch {
-        repository.insertWeather(weather)
+    fun <T> getData(key: String): T {
+        return repository.getData(key)
     }
 }

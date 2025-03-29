@@ -96,7 +96,7 @@ class MainActivity : ComponentActivity() {
                     if (showFloatingActionButton.value) {
                         FloatingActionButton(onClick = {
                             showFloatingActionButton.value = false
-                            navController.navigate(Screen.LocationSelection)
+                            navController.navigate(Screen.LocationSelection(true))
                         }) {
                             Icon(Icons.Default.LocationOn, contentDescription = stringResource(R.string.add_item))
                         }

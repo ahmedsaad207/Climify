@@ -17,11 +17,12 @@ import com.delighted2wins.climify.domainmodel.ForecastWeather
 @Composable
 fun DisplayHomeData(
     currentWeather: CurrentWeather,
-    onNavigateToLocationSelection: () -> Unit = {},
+    onNavigateToLocationSelection: (Boolean) -> Unit = {},
     forecastHours: List<ForecastWeather>,
     forecastDays: List<ForecastWeather>,
     isOnline: Boolean = true,
     backButton: Boolean = false,
+    appUnit: String,
     onNavigateBack: () -> Unit = {}
 ) {
 
@@ -43,7 +44,8 @@ fun DisplayHomeData(
                     onNavigateToLocationSelection,
                     currentWeather,
                     backButton,
-                    onNavigateBack
+                    onNavigateBack,
+                    appUnit = appUnit
                 )
                 DisplayHourlyWeathers(forecastHours)
                 DisplayUpcomingWeathers(forecastDays)
@@ -53,7 +55,8 @@ fun DisplayHomeData(
                     currentWeather,
                     backButton,
                     onNavigateBack,
-                    true
+                    true,
+                    appUnit = appUnit
                 )
             }
         }

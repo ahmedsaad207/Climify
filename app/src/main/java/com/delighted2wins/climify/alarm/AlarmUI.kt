@@ -46,7 +46,7 @@ import com.delighted2wins.climify.utils.Constants
 import com.delighted2wins.climify.utils.getCountryNameFromCode
 import com.delighted2wins.climify.worker.WeatherAlarmWorker
 
-@RequiresApi(Build.VERSION_CODES.O)
+
 @Composable
 fun AlarmUI() {
     Log.i("TAG", "AlarmUI")

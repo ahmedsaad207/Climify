@@ -27,7 +27,7 @@ fun SetupNavHost(
     ) {
         composable<Screen.Home> {
             HomeUi(showBottomNabBar){
-                navController.navigate(Screen.LocationSelection)
+                navController.navigate(Screen.LocationSelection(it))
             }
         }
 
@@ -42,7 +42,7 @@ fun SetupNavHost(
         }
 
         composable<Screen.Settings> {
-            SettingsUI(showBottomNabBar){navController.navigate(Screen.LocationSelection)}
+            SettingsUI(showBottomNabBar){navController.navigate(Screen.LocationSelection(false))}
         }
 
         composable<Screen.Details> {
@@ -53,9 +53,17 @@ fun SetupNavHost(
         }
 
         composable<Screen.LocationSelection> {
-            LocationSelectionUI(showBottomNabBar) {
-                navController.navigateUp()
-                showFloatingActionButton.value = true
+            val isFavorite = it.toRoute<Screen.LocationSelection>().isFavorite
+            LocationSelectionUI(showBottomNabBar, isFavorite) {
+                if (isFavorite) {
+                    navController.navigateUp()
+                    showFloatingActionButton.value = true
+                } else {
+                    navController.navigate(Screen.Home)
+                    showFloatingActionButton.value = false
+                }
+
+
             }
         }
 

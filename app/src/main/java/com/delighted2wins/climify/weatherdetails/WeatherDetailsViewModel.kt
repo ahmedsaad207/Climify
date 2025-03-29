@@ -109,4 +109,8 @@ class WeatherDetailsViewModel(private val repository: WeatherRepository) : ViewM
     private fun fetchLocalData(data: CurrentWeather) = viewModelScope.launch {
         _uiState.emit(Response.Success(Triple(data, emptyList<Nothing>(), emptyList<Nothing>())))
     }
+
+    fun <T> getData(key: String): T {
+        return repository.getData(key)
+    }
 }

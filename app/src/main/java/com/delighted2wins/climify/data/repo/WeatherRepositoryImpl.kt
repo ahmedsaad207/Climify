@@ -6,7 +6,7 @@ import com.delighted2wins.climify.data.model.CurrentWeatherResponse
 import com.delighted2wins.climify.data.model.UpcomingForecastResponse
 import com.delighted2wins.climify.data.remote.WeatherRemoteDataSource
 import com.delighted2wins.climify.domainmodel.CurrentWeather
-import com.delighted2wins.climify.domainmodel.State
+import com.delighted2wins.climify.domainmodel.LocationInfo
 import kotlinx.coroutines.flow.Flow
 
 class WeatherRepositoryImpl(
@@ -31,11 +31,11 @@ class WeatherRepositoryImpl(
         return remote.getUpcomingForecast(lat, lon, units)
     }
 
-    override suspend fun getStateInfoByLocation(lat: Double, lon: Double): List<State> {
+    override suspend fun getStateInfoByLocation(lat: Double, lon: Double): List<LocationInfo> {
         return remote.getStateInfoByLocation(lat, lon)
     }
 
-    override suspend fun getLocationByQuery(query: String): List<State> {
+    override suspend fun getLocationByQuery(query: String): List<LocationInfo> {
         return remote.getLocationByQuery(query)
     }
 
