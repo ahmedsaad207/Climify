@@ -3,16 +3,15 @@ package com.delighted2wins.climify.alarm
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.provider.Settings
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,6 +29,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -52,9 +53,12 @@ fun AlarmUI() {
     Log.i("TAG", "AlarmUI")
 
     val context = LocalContext.current
-//    val sp = context.getSharedPreferences(Constants.PREF_NAME, Context.MODE_PRIVATE)
-//    val lat = sp.getString("lat", "0.0")?.toDouble() ?: 0.0
-//    val lon = sp.getString("lon", "0.0")?.toDouble() ?: 0.0
+
+    LazyColumn {
+
+
+
+    }
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -74,6 +78,7 @@ fun AlarmUI() {
             Text("Run Alarm")
         }
     }
+
 
 }
 

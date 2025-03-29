@@ -84,18 +84,18 @@ fun FavoriteUI(
     onNavigateToWeatherDetails: (Int) -> Unit
 ) {
 
-    LaunchedEffect(Unit) {
-        showBottomNabBar.value = true
-        showFloatingActionButton.value = true
-    }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val viewModel: FavoriteViewModel =
         viewModel(factory = FavoriteViewModelFactory(getRepo(context)))
+
+    LaunchedEffect(Unit) {
+        showBottomNabBar.value = true
+        showFloatingActionButton.value = true
+    }
     LaunchedEffect(Unit) {
         viewModel.getFavoriteWeathers()
     }
-
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -111,11 +111,13 @@ fun FavoriteUI(
                 weathersState.value = weathers
             }
 
-            if (weathersState.value.isNotEmpty()) {    // show data
+            if (weathersState.value.isNotEmpty()) {
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
+
+                    // original
                     item {
                         Spacer(Modifier.height(24.dp))
                         Text(
@@ -128,6 +130,8 @@ fun FavoriteUI(
                                 .padding(horizontal = 24.dp, vertical = 16.dp)
                         )
                     }
+
+
                     items(
                         items = weathersState.value,
                         key = { it.id }
@@ -147,8 +151,12 @@ fun FavoriteUI(
                         }
                     }
 
+                    item {
+                        Spacer(modifier = Modifier.height(180.dp))
+                    }
+
                 }
-            } else {    // empty list
+            } else {
                 val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.empty2))
                 val progress by animateLottieCompositionAsState(
                     composition = composition,
@@ -222,6 +230,7 @@ fun FavoriteUI(
     }
 }
 
+// black default
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun FavoriteLocationItem(weather: CurrentWeather, onNavigateToWeatherDetails: (Int) -> Unit, appUnit: String) {

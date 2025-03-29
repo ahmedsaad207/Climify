@@ -26,7 +26,7 @@ fun SetupNavHost(
         startDestination = Screen.Home
     ) {
         composable<Screen.Home> {
-            HomeUi(showBottomNabBar){
+            HomeUi(showBottomNabBar) {
                 navController.navigate(Screen.LocationSelection(it))
             }
         }
@@ -42,7 +42,7 @@ fun SetupNavHost(
         }
 
         composable<Screen.Settings> {
-            SettingsUI(showBottomNabBar){navController.navigate(Screen.LocationSelection(false))}
+            SettingsUI(showBottomNabBar) { navController.navigate(Screen.LocationSelection(false)) }
         }
 
         composable<Screen.Details> {

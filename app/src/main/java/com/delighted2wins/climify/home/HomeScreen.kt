@@ -1,6 +1,8 @@
 package com.delighted2wins.climify.home
 
 import android.content.Context
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -49,6 +51,13 @@ fun HomeUi(
     showBottomNabBar: MutableState<Boolean>, onNavigateToLocationSelection: (Boolean) -> Unit
 ) {
     showBottomNabBar.value = true
+
+    val activity = LocalActivity.current
+
+    BackHandler {
+        activity?.finish() // Closes the app when back is pressed
+    }
+
 
     val context = LocalContext.current
     val viewModel: HomeViewModel = viewModel(

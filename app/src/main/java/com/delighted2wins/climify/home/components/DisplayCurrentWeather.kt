@@ -91,7 +91,6 @@ fun DisplayCurrentWeather(
 
         // background gif
         Surface(modifier = Modifier.fillMaxSize()) {
-
             Image(
                 painter = rememberDrawablePainter(
                     drawable = AppCompatResources.getDrawable(
