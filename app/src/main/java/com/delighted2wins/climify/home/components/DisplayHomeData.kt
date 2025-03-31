@@ -58,6 +58,8 @@ fun DisplayHomeData(
                     true,
                     appUnit = appUnit
                 )
+                DisplayHourlyWeathers(forecastHours)
+                DisplayUpcomingWeathers(forecastDays)
             }
         }
 

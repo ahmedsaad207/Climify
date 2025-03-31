@@ -32,13 +32,14 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.delighted2wins.climify.R
 import com.delighted2wins.climify.Response
+import com.delighted2wins.climify.data.local.db.AlarmsLocalDataSourceImpl
 import com.delighted2wins.climify.data.local.db.WeatherDatabase
 import com.delighted2wins.climify.data.local.db.WeathersLocalDataSourceImpl
 import com.delighted2wins.climify.data.local.preferences.PreferencesDataSourceImpl
 import com.delighted2wins.climify.data.remote.RetrofitClient
 import com.delighted2wins.climify.data.remote.WeatherRemoteDataSourceImpl
 import com.delighted2wins.climify.data.repo.WeatherRepositoryImpl
-import com.delighted2wins.climify.enums.Language
+import com.delighted2wins.climify.domainmodel.CurrentWeather
 import com.delighted2wins.climify.enums.LocationSource
 import com.delighted2wins.climify.enums.TempUnit
 import com.delighted2wins.climify.home.components.DisplayHomeData
@@ -48,14 +49,16 @@ import com.delighted2wins.climify.utils.getUserLocationUsingGps
 
 @Composable
 fun HomeUi(
-    showBottomNabBar: MutableState<Boolean>, onNavigateToLocationSelection: (Boolean) -> Unit
+    notificationWeather: CurrentWeather?,
+    showBottomNabBar: MutableState<Boolean>,
+    onNavigateToLocationSelection: (Boolean) -> Unit
 ) {
     showBottomNabBar.value = true
 
     val activity = LocalActivity.current
 
     BackHandler {
-        activity?.finish() // Closes the app when back is pressed
+        activity?.finish()
     }
 
 
@@ -64,19 +67,22 @@ fun HomeUi(
         factory = HomeViewModelFactory(getRepo(context))
     )
 
-    val lang = viewModel.getData<Language>(Constants.KEY_LANG).value
-    val tempUnit = viewModel.getData<TempUnit>(Constants.KEY_TEMP_UNIT).value
+    val unit = viewModel.getData<TempUnit>(Constants.KEY_TEMP_UNIT).value
     val userLocation = viewModel.getData<LocationSource>(Constants.KEY_LOCATION_SOURCE).value
-
+    val isOnline = true
 
     LaunchedEffect(Unit) {
-        if (userLocation == LocationSource.MAP.value) {
-            val (lat, lon) = viewModel.getData<Pair<Double, Double>>("")
-            viewModel.fetchWeatherData(lat, lon, tempUnit, lang)
-        } else {
-            context.getUserLocationUsingGps { lat, lon ->
-                viewModel.fetchWeatherData(lat, lon, tempUnit, lang)
+        if (notificationWeather == null) {
+            if (userLocation == LocationSource.MAP.value) {
+                val (lat, lon) = viewModel.getData<Pair<Double, Double>>("")
+                viewModel.fetchWeatherData(lat, lon, isOnline)
+            } else {
+                context.getUserLocationUsingGps { lat, lon ->
+                    viewModel.fetchWeatherData(lat, lon, isOnline)
+                }
             }
+        } else {
+            viewModel.fetchWeatherData(notificationWeather.lat, notificationWeather.long, isOnline)
         }
     }
 
@@ -87,9 +93,28 @@ fun HomeUi(
 
         is Response.Success -> {
             val (currentWeather, forecastHours, forecastDays) = (uiState as Response.Success).data
+
+            if (isOnline) {
+                // data from request
             DisplayHomeData(
-                currentWeather!!, onNavigateToLocationSelection, forecastHours, forecastDays, appUnit = tempUnit
+                currentWeather!!,
+                onNavigateToLocationSelection,
+                forecastHours,
+                forecastDays,
+                appUnit = unit
             )
+            } else {
+                // local data
+                DisplayHomeData(
+                    currentWeather!!,
+                    onNavigateToLocationSelection,
+                    currentWeather.hoursForecast,
+                    currentWeather.daysForecast,
+                    appUnit = unit,
+                    isOnline = false
+                )
+            }
+
         }
 
         is Response.Failure -> {
@@ -129,11 +154,8 @@ fun HomeUi(
 }
 
 fun getRepo(context: Context) = WeatherRepositoryImpl(
-    WeatherRemoteDataSourceImpl(RetrofitClient.service), WeathersLocalDataSourceImpl(
-        WeatherDatabase.getInstance(context.applicationContext).getWeatherDao()
-    ), PreferencesDataSourceImpl(
-        context.getSharedPreferences(
-            Constants.PREF_NAME, Context.MODE_PRIVATE
-        )
-    )
+    WeatherRemoteDataSourceImpl(RetrofitClient.service),
+    WeathersLocalDataSourceImpl(WeatherDatabase.getInstance(context.applicationContext).getWeatherDao()),
+    AlarmsLocalDataSourceImpl(WeatherDatabase.getInstance(context.applicationContext).getWeatherDao()),
+    PreferencesDataSourceImpl(context.getSharedPreferences(Constants.PREF_NAME, Context.MODE_PRIVATE))
 )

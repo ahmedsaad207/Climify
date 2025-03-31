@@ -2,6 +2,7 @@ package com.delighted2wins.climify.data.repo
 
 import com.delighted2wins.climify.data.model.CurrentWeatherResponse
 import com.delighted2wins.climify.data.model.UpcomingForecastResponse
+import com.delighted2wins.climify.domainmodel.Alarm
 import com.delighted2wins.climify.domainmodel.CurrentWeather
 import com.delighted2wins.climify.domainmodel.LocationInfo
 import kotlinx.coroutines.flow.Flow
@@ -42,4 +43,12 @@ interface WeatherRepository {
     fun <T> saveData(value: T)
 
     fun <T> getData(type: String): T
+
+    suspend fun insertAlarm(alarm: Alarm): Long
+
+    fun getAllAlarms(): Flow<List<Alarm>>
+
+    suspend fun deleteAlarm(alarm: Alarm): Int
+
+    fun getCachedWeather(): Flow<CurrentWeather>
 }

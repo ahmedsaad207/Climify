@@ -1,7 +1,10 @@
 package com.delighted2wins.climify
 
 import android.annotation.SuppressLint
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -19,6 +22,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AlarmAdd
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.FavoriteBorder
@@ -45,19 +50,22 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.delighted2wins.climify.domainmodel.Alarm
+import com.delighted2wins.climify.domainmodel.CurrentWeather
 import com.delighted2wins.climify.enums.Language
 import com.delighted2wins.climify.home.getRepo
+import com.delighted2wins.climify.service.WeatherUpdateService
 import com.delighted2wins.climify.utils.Constants
 import com.delighted2wins.climify.utils.updateAppLanguage
-import com.delighted2wins.climify.worker.AppViewModelFactory
 import com.google.android.libraries.places.api.Places
+import com.google.gson.Gson
 
 class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -71,8 +79,30 @@ class MainActivity : ComponentActivity() {
         if (!Places.isInitialized()) {
             Places.initialize(this.applicationContext, BuildConfig.PlacesApiKey)
         }
+        var notificationWeather: CurrentWeather? = null
 
         updateAppLanguage(lang.value)
+
+        intent?.let { intent ->
+            val json = intent.getStringExtra(Constants.KEY_CURRENT_WEATHER)
+            json?.let {
+                val alarm =
+                    Gson().fromJson(intent.getStringExtra(Constants.KEY_ALARM), Alarm::class.java)
+                Log.i("TAG", "onCreate: alarm Tag: ${alarm.tag}")
+                viewModel.deleteAlarm(alarm)
+
+                notificationWeather = Gson().fromJson(json, CurrentWeather::class.java)
+                val stopServiceIntent =
+                    Intent(applicationContext, WeatherUpdateService::class.java).apply {
+                        action = "STOP_SERVICE"
+                    }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    ContextCompat.startForegroundService(applicationContext, stopServiceIntent)
+                } else {
+                    applicationContext.startService(stopServiceIntent)
+                }
+            }
+        }
 
         setContent {
             val showFloatingActionButton = remember { mutableStateOf(false) }
@@ -81,6 +111,9 @@ class MainActivity : ComponentActivity() {
             val navController = rememberNavController()
             val selectedNavigationIndex = rememberSaveable { mutableIntStateOf(0) }
             val currentBackStackEntry by navController.currentBackStackEntryAsState()
+            val fabIcon = remember { mutableStateOf(Icons.Default.Add) }
+            val fabAction = remember { mutableStateOf({}) }
+
             Scaffold(
                 bottomBar = {
                     if (showBottomNabBar.value) {
@@ -94,7 +127,8 @@ class MainActivity : ComponentActivity() {
                                 navController,
                                 showFloatingActionButton,
                                 selectedNavigationIndex,
-                                currentBackStackEntry
+                                currentBackStackEntry,
+                                fabIcon
                             )
                         }
                     }
@@ -102,19 +136,30 @@ class MainActivity : ComponentActivity() {
                 floatingActionButton = {
                     if (showFloatingActionButton.value) {
                         FloatingActionButton(onClick = {
-                            showFloatingActionButton.value = false
-                            navController.navigate(Screen.LocationSelection(true))
+                            when (navController.currentDestination?.route?.substringAfterLast(".")
+                                ?: "") {
+                                Screen.Alarm::class.simpleName -> {
+                                    Log.i("TAG", "Alarm clicked: ")
+                                    fabAction.value.invoke()
+                                }
+
+                                Screen.Favorite::class.simpleName -> {
+                                    Log.i("TAG", "Favorite clicked: ")
+                                    navController.navigate(Screen.LocationSelection(true))
+                                    showFloatingActionButton.value = false
+                                }
+                            }
                         })
                         {
                             Icon(
-                                Icons.Default.LocationOn,
-                                contentDescription = stringResource(R.string.add_item)
+                                imageVector = fabIcon.value,
+                                contentDescription = null
                             )
                         }
                     }
                 },
                 snackbarHost = { SnackbarHost(hostState = snackBarHostState) }
-            ) { innerPadding ->
+            ) { _ ->
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -125,7 +170,11 @@ class MainActivity : ComponentActivity() {
                         navController,
                         showFloatingActionButton,
                         showBottomNabBar,
-                        snackBarHostState
+                        snackBarHostState,
+                        notificationWeather,
+                        onSetAlarm = { action ->
+                            fabAction.value = action
+                        }
                     )
                 }
             }
@@ -134,14 +183,14 @@ class MainActivity : ComponentActivity() {
 }
 
 
-
 // blue design
 @Composable
 fun BottomNavigationBar(
     navController: NavHostController,
     showFloatingActionButton: MutableState<Boolean>,
     selectedNavigationIndex: MutableIntState,
-    currentBackStackEntry: NavBackStackEntry?
+    currentBackStackEntry: NavBackStackEntry?,
+    fabIcon: MutableState<ImageVector>
 ) {
     val navigationBottomItems = listOf(
         NavigationItem(Icons.Rounded.Home, Screen.Home),
@@ -152,6 +201,16 @@ fun BottomNavigationBar(
 
     LaunchedEffect(currentBackStackEntry) {
         val currentRoute = currentBackStackEntry?.destination?.route?.substringAfterLast(".")
+
+        when (currentRoute) {
+            Screen.Alarm::class.simpleName -> {
+                fabIcon.value = Icons.Default.AlarmAdd
+            }
+
+            Screen.Favorite::class.simpleName -> {
+                fabIcon.value = Icons.Default.LocationOn
+            }
+        }
         val matchedScreen = navigationBottomItems.firstOrNull {
             it.route::class.simpleName == currentRoute
         }

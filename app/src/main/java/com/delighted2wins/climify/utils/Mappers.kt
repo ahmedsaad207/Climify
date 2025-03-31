@@ -24,7 +24,9 @@ fun CurrentWeatherResponse.toCurrentWeather(): CurrentWeather {
         long = coord?.lon ?: 0.0,
         background = getBackgroundDrawableFromIconCode(weather[0].icon ?: "0"),
         country = sys?.country ?: "",
-        id = id ?: -1
+        id = id ?: -1,
+        hoursForecast = emptyList(),
+        daysForecast = emptyList()
     )
 }
 

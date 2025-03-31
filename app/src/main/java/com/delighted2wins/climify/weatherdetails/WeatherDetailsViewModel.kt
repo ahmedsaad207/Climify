@@ -87,12 +87,16 @@ class WeatherDetailsViewModel(private val repository: WeatherRepository) : ViewM
                     )
                     val data = Triple(currentWeather, hours, days)
                     currentWeather.id = localWeather.id
+                    currentWeather.hoursForecast = hours
+                    currentWeather.daysForecast = days
                     repository.updateWeather(currentWeather)
                     _uiState.value = Response.Success(data)
-                } else {
+                }
+                else {
                     _uiState.value = Response.Failure("Failed to fetch data.")
                 }
-            } catch (e: Exception) {
+            }
+            catch (e: Exception) {
                 _uiState.value = Response.Failure(e.message.toString())
             }
         }
@@ -107,7 +111,7 @@ class WeatherDetailsViewModel(private val repository: WeatherRepository) : ViewM
     }
 
     private fun fetchLocalData(data: CurrentWeather) = viewModelScope.launch {
-        _uiState.emit(Response.Success(Triple(data, emptyList<Nothing>(), emptyList<Nothing>())))
+        _uiState.emit(Response.Success(Triple(data, data.hoursForecast, data.daysForecast)))
     }
 
     fun <T> getData(key: String): T {
