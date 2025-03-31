@@ -69,7 +69,9 @@ fun LocationSelectionUI(
     isFavorite: Boolean,
     onNavigateToHome: () -> Unit
 ) {
-    showBottomNabBar.value = false
+    LaunchedEffect(Unit) {
+        showBottomNabBar.value = false
+    }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -107,14 +109,7 @@ private fun ShowMap(
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-
-    var predictions by remember { mutableStateOf(emptyList<AutocompletePrediction>()) }
     var savedLocation by remember { mutableStateOf(LatLng(0.0, 0.0)) }
-    val marker = remember { mutableStateOf(MarkerState(position = savedLocation)) }
-    var input by remember { mutableStateOf("") }
-    val cameraPosition = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(savedLocation, 5f)
-    }
 
     val (lat, lon) = viewModel.getData<Pair<Double, Double>>("LOCATION")
     val userLocation = viewModel.getData<LocationSource>(Constants.KEY_LOCATION_SOURCE).value
@@ -133,6 +128,13 @@ private fun ShowMap(
             savedLocation = LatLng(latitude, longitude)
         }
     }
+
+    var predictions by remember { mutableStateOf(emptyList<AutocompletePrediction>()) }
+    var input by remember { mutableStateOf("") }
+    val cameraPosition = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(savedLocation, 5f)
+    }
+    val marker = remember { mutableStateOf(MarkerState(position = savedLocation)) }
 
     LaunchedEffect(Unit) { viewModel.getLocationInfo(lat, lon) }
     LaunchedEffect(input) {

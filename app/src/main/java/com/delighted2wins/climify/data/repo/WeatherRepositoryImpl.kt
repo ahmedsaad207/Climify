@@ -1,17 +1,20 @@
 package com.delighted2wins.climify.data.repo
 
+import com.delighted2wins.climify.data.local.db.AlarmsLocalDataSource
 import com.delighted2wins.climify.data.local.db.WeathersLocalDataSource
 import com.delighted2wins.climify.data.local.preferences.PreferencesDataSourceImpl
 import com.delighted2wins.climify.data.model.CurrentWeatherResponse
 import com.delighted2wins.climify.data.model.UpcomingForecastResponse
 import com.delighted2wins.climify.data.remote.WeatherRemoteDataSource
+import com.delighted2wins.climify.domainmodel.Alarm
 import com.delighted2wins.climify.domainmodel.CurrentWeather
 import com.delighted2wins.climify.domainmodel.LocationInfo
 import kotlinx.coroutines.flow.Flow
 
 class WeatherRepositoryImpl(
     private val remote: WeatherRemoteDataSource,
-    private val local: WeathersLocalDataSource,
+    private val weatherLocal: WeathersLocalDataSource,
+    private val alarmLocal: AlarmsLocalDataSource,
     private val preferences: PreferencesDataSourceImpl
     ) : WeatherRepository {
     override suspend fun getCurrentWeather(
@@ -40,23 +43,23 @@ class WeatherRepositoryImpl(
     }
 
     override suspend fun insertWeather(weather: CurrentWeather): Long {
-        return local.insertWeather(weather)
+        return weatherLocal.insertWeather(weather)
     }
 
     override suspend fun getFavoriteWeathers(): Flow<List<CurrentWeather>> {
-        return local.getFavoriteWeathers()
+        return weatherLocal.getFavoriteWeathers()
     }
 
     override fun getWeatherById(id: Int): Flow<CurrentWeather> {
-        return local.getWeatherById(id)
+        return weatherLocal.getWeatherById(id)
     }
 
     override suspend fun updateWeather(weather: CurrentWeather) {
-        local.updateWeather(weather)
+        weatherLocal.updateWeather(weather)
     }
 
     override suspend fun deleteWeather(weather: CurrentWeather) {
-        local.deleteWeather(weather)
+        weatherLocal.deleteWeather(weather)
     }
 
     override fun <T> saveData(value: T) {
@@ -65,6 +68,22 @@ class WeatherRepositoryImpl(
 
     override fun <T> getData(type: String): T {
         return preferences.getData(type)
+    }
+
+    override suspend fun insertAlarm(alarm: Alarm): Long {
+        return alarmLocal.insertAlarm(alarm)
+    }
+
+    override fun getAllAlarms(): Flow<List<Alarm>> {
+        return alarmLocal.getAllAlarms()
+    }
+
+    override suspend fun deleteAlarm(alarm: Alarm): Int {
+        return alarmLocal.deleteAlarm(alarm)
+    }
+
+    override fun getCachedWeather(): Flow<CurrentWeather> {
+        return weatherLocal.getCachedWeather()
     }
 
 }

@@ -1,7 +1,5 @@
 package com.delighted2wins.climify.home.components
 
-import androidx.appcompat.content.res.AppCompatResources
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
@@ -46,7 +45,6 @@ import com.delighted2wins.climify.utils.getTempUnitSymbol
 import com.delighted2wins.climify.utils.getWindSpeedUnitSymbol
 import com.delighted2wins.climify.utils.toLocalizedNumber
 import com.delighted2wins.climify.weatherdetails.BackButton
-import com.google.accompanist.drawablepainter.rememberDrawablePainter
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
@@ -91,15 +89,12 @@ fun DisplayCurrentWeather(
 
         // background gif
         Surface(modifier = Modifier.fillMaxSize()) {
-            Image(
-                painter = rememberDrawablePainter(
-                    drawable = AppCompatResources.getDrawable(
-                        LocalContext.current,
-                        currentWeather.background
-                    )
-                ),
+            GlideImage(
+                model = currentWeather.background,
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(LocalConfiguration.current.screenHeightDp.dp / 2),
                 contentScale = ContentScale.Crop
             )
 

@@ -1,5 +1,6 @@
 package com.delighted2wins.climify.home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.delighted2wins.climify.Response
@@ -8,6 +9,7 @@ import com.delighted2wins.climify.domainmodel.CurrentWeather
 import com.delighted2wins.climify.domainmodel.ForecastWeather
 import com.delighted2wins.climify.enums.Language
 import com.delighted2wins.climify.enums.TempUnit
+import com.delighted2wins.climify.utils.Constants
 import com.delighted2wins.climify.utils.filterForecastToHoursAndDays
 import com.delighted2wins.climify.utils.toCurrentWeather
 import com.delighted2wins.climify.utils.toForecastWeather
@@ -36,53 +38,74 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
     }
 
     fun fetchWeatherData(
-        lat: Double = 10.7946,
-        lon: Double = 106.5348,
-        units: String = TempUnit.METRIC.value,
-        lang: String = Language.EN.value
+        lat: Double,
+        lon: Double,
+        isOnline: Boolean
     ) {
-        viewModelScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
-            try {
-                val currentWeatherDeferred = async {
-                    repository.getCurrentWeather(lat, lon, units, lang)
-                        .catch { e ->
-                            _uiState.value = Response.Failure(e.message.toString())
-                        }
-                        .map {
-                            it.toCurrentWeather()
-                        }
-                        .onEach {
-                            it.unit = units
-                        }
-                        .firstOrNull()
-                }
+        val lang = getData<Language>(Constants.KEY_LANG).value
+        val units = getData<TempUnit>(Constants.KEY_TEMP_UNIT).value
 
-                val upcomingForecastDeferred = async {
-                    repository.getUpcomingForecast(lat, lon, units)
-                        .catch { e ->
-                            _uiState.value = Response.Failure(e.message.toString())
-                        }
-                        .map {
-                            it.toForecastWeatherList(units)
-                        }
-                        .firstOrNull()
-                }
+        if (isOnline) {
+            viewModelScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
+                try {
+                    val currentWeatherDeferred = async {
+                        repository.getCurrentWeather(lat, lon, units, lang)
+                            .catch { e ->
+                                _uiState.value = Response.Failure(e.message.toString())
+                            }
+                            .map {
+                                it.toCurrentWeather()
+                            }
+                            .onEach {
+                                it.unit = units
+                            }
+                            .firstOrNull()
+                    }
 
-                val currentWeather = currentWeatherDeferred.await()
-                val upcomingForecast = upcomingForecastDeferred.await()
+                    val upcomingForecastDeferred = async {
+                        repository.getUpcomingForecast(lat, lon, units)
+                            .catch { e ->
+                                _uiState.value = Response.Failure(e.message.toString())
+                            }
+                            .map {
+                                it.toForecastWeatherList(units)
+                            }
+                            .firstOrNull()
+                    }
 
-                if (currentWeather != null && upcomingForecast != null) {
-                    val (hours, days) = filterForecastToHoursAndDays(
-                        currentWeather.toForecastWeather().apply { unit = units },
-                        upcomingForecast
-                    )
-                    val data = Triple(currentWeather, hours, days)
-                    _uiState.value = Response.Success(data)
-                } else {
-                    _uiState.value = Response.Failure("Failed to fetch data.")
+                    val currentWeather = currentWeatherDeferred.await()
+                    val upcomingForecast = upcomingForecastDeferred.await()
+
+                    if (currentWeather != null && upcomingForecast != null) {
+                        val (hours, days) = filterForecastToHoursAndDays(
+                            currentWeather.toForecastWeather().apply { unit = units },
+                            upcomingForecast
+                        )
+                        val data = Triple(currentWeather, hours, days)
+                        _uiState.value = Response.Success(data)
+                        currentWeather.id = 1
+                        currentWeather.hoursForecast = hours
+                        currentWeather.daysForecast = days
+                        val inserted = repository.insertWeather(currentWeather)
+                        Log.i("TAG", "fetchWeatherData: inserted= $inserted")
+                    }
+                    else {
+                        _uiState.value = Response.Failure("Failed to fetch data.")
+                    }
                 }
-            } catch (e: Exception) {
-                _uiState.value = Response.Failure(e.message.toString())
+                catch (e: Exception) {
+                    _uiState.value = Response.Failure(e.message.toString())
+                }
+            }
+        }
+        else {
+            viewModelScope.launch {
+                repository.getCachedWeather()
+                    .catch { _uiState.value = Response.Failure(it.message.toString()) }
+                    .collect {
+                        val data = Triple(it, emptyList<ForecastWeather>(), emptyList<ForecastWeather>())
+                        _uiState.value = Response.Success(data)
+                    }
             }
         }
     }

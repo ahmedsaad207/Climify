@@ -1,12 +1,13 @@
 package com.delighted2wins.climify.favorite
 
-import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -41,7 +42,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -73,7 +73,6 @@ import com.delighted2wins.climify.utils.getCountryNameFromCode
 import com.delighted2wins.climify.utils.getTempUnitSymbol
 import com.delighted2wins.climify.utils.timeStampToHumanDate
 import com.delighted2wins.climify.utils.toLocalizedNumber
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -105,7 +104,8 @@ fun FavoriteUI(
         is Response.Success -> {
             val weathers = (uiState as Response.Success).data
             val weathersState = remember { mutableStateOf(weathers) }
-            val appUnit= viewModel.getData<TempUnit>(Constants.KEY_TEMP_UNIT).value
+            val appUnit = viewModel.getData<TempUnit>(Constants.KEY_TEMP_UNIT).value
+            val animationDuration = 500
 
             LaunchedEffect(weathers) {
                 weathersState.value = weathers
@@ -117,7 +117,7 @@ fun FavoriteUI(
                         .fillMaxSize()
                 ) {
 
-                    // original
+                    // header
                     item {
                         Spacer(Modifier.height(24.dp))
                         Text(
@@ -131,23 +131,69 @@ fun FavoriteUI(
                         )
                     }
 
-
+                    // list
                     items(
                         items = weathersState.value,
                         key = { it.id }
-                    ) {
-                        weather ->
-                        SwipeToDeleteContainer(
-                            context = context,
-                            item = weather,
-                            onDelete = {
-                                scope.launch {
+                    ) { weather ->
+                        val dismissState = rememberSwipeToDismissBoxState(
+                            confirmValueChange = { dismissValue ->
+                                if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
                                     viewModel.deleteWeather(weather)
+
+                                    scope.launch {
+                                        snackBarHostState.currentSnackbarData?.dismiss()
+                                        val result = snackBarHostState.showSnackbar(
+                                            message = "Location deleted from favorite",
+                                            actionLabel = "Undo",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                        if (result == SnackbarResult.ActionPerformed) {
+                                            viewModel.insertWeather(weather)
+                                        }
+                                    }
                                 }
-                            },
-                            snackBarHostState = snackBarHostState
+                                true
+                            }
+                        )
+
+                        AnimatedVisibility(
+                            visible = dismissState.currentValue != SwipeToDismissBoxValue.EndToStart,
+                            exit = shrinkVertically(
+                                shrinkTowards = Alignment.Top,
+                                animationSpec = tween(
+                                    durationMillis = animationDuration,
+                                    easing = FastOutSlowInEasing
+                                )
+                            ) + fadeOut(animationSpec = tween(durationMillis = animationDuration)),
+                            enter = slideInVertically(
+                                initialOffsetY = { it / 2 },
+                                animationSpec = tween(
+                                    durationMillis = 500,
+                                    easing = LinearOutSlowInEasing
+                                )
+                            ) + fadeIn(animationSpec = tween(durationMillis = 300))
                         ) {
-                            FavoriteLocationItem(weather, onNavigateToWeatherDetails,appUnit )
+                            SwipeToDismissBox(
+                                state = dismissState,
+                                enableDismissFromStartToEnd = false,
+                                backgroundContent = {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(horizontal = 24.dp),
+                                        contentAlignment = Alignment.CenterEnd
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Delete",
+                                            tint = Color.White
+                                        )
+                                    }
+                                }
+                            ) {
+                                FavoriteLocationItem(weather, onNavigateToWeatherDetails, appUnit)
+                            }
                         }
                     }
 
@@ -230,10 +276,14 @@ fun FavoriteUI(
     }
 }
 
-// black default
+
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun FavoriteLocationItem(weather: CurrentWeather, onNavigateToWeatherDetails: (Int) -> Unit, appUnit: String) {
+fun FavoriteLocationItem(
+    weather: CurrentWeather,
+    onNavigateToWeatherDetails: (Int) -> Unit,
+    appUnit: String
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -244,12 +294,13 @@ fun FavoriteLocationItem(weather: CurrentWeather, onNavigateToWeatherDetails: (I
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         val unit = LocalContext.current.getTempUnitSymbol(appUnit)
-        val temp = weather.unit.convertTemp(weather.temp.toDouble(), appUnit).toInt().toLocalizedNumber()
+        val temp =
+            weather.unit.convertTemp(weather.temp.toDouble(), appUnit).toInt().toLocalizedNumber()
 
         // country, city and description, time
         Column(
             modifier = Modifier.weight(1f)
-        ){
+        ) {
             Text(
                 text = weather.country.getCountryNameFromCode() ?: "",
                 fontSize = 16.sp,
@@ -304,7 +355,7 @@ fun FavoriteLocationItem(weather: CurrentWeather, onNavigateToWeatherDetails: (I
                 modifier = Modifier.size(72.dp)
             )
             Spacer(Modifier.height(15.dp))
-            Row{
+            Row {
                 Text(
                     text = temp,
                     fontSize = 24.sp,
@@ -325,90 +376,3 @@ fun FavoriteLocationItem(weather: CurrentWeather, onNavigateToWeatherDetails: (I
     }
 }
 
-@Composable
-fun DeleteBackground() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        contentAlignment = Alignment.CenterEnd
-    ) {
-        Icon(
-            imageVector = Icons.Default.Delete,
-            contentDescription = null,
-            modifier = Modifier.size(24.dp),
-            tint = Color.White
-        )
-    }
-}
-
-@Composable
-fun SwipeToDeleteContainer(
-    context: Context,
-    item: CurrentWeather,
-    onDelete: (CurrentWeather) -> Unit,
-    onRestore: (CurrentWeather) -> Unit = {},
-    animationDuration: Int = 500,
-    snackBarHostState: SnackbarHostState,
-    content: @Composable (CurrentWeather) -> Unit
-) {
-
-    var isRemoved by remember { mutableStateOf(false) }
-    var canSwipe by remember { mutableStateOf(true) }
-
-    val state = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                isRemoved = true
-                canSwipe = false
-                true
-            } else {
-                false
-            }
-        }
-    )
-    LaunchedEffect(isRemoved) {
-        if (isRemoved) {
-            val result = snackBarHostState.showSnackbar(
-                message = context.getString(R.string.location_deleted_successfully),
-                actionLabel = context.getString(R.string.undo),
-                duration = SnackbarDuration.Short
-            )
-            if (result == SnackbarResult.ActionPerformed) {
-                onRestore(item)
-                canSwipe = true
-                isRemoved = false
-            } else {
-                delay(animationDuration.toLong())
-                onDelete(item)
-            }
-        }
-    }
-
-    AnimatedVisibility(
-        visible = !isRemoved,
-        exit = shrinkVertically(
-            shrinkTowards = Alignment.Top,
-            animationSpec = tween(durationMillis = animationDuration)
-        ) + fadeOut(),
-        enter = expandVertically(
-            expandFrom = Alignment.Top,
-            animationSpec = tween(durationMillis = animationDuration)
-        ) + fadeIn(),
-    ) {
-        if (canSwipe) {
-            SwipeToDismissBox(
-                state = state,
-                backgroundContent = { DeleteBackground() },
-                enableDismissFromStartToEnd = false
-            ) {
-                content(item)
-            }
-        } else {
-            LaunchedEffect(Unit) {
-                state.snapTo(SwipeToDismissBoxValue.Settled)
-            }
-            content(item)
-        }
-    }
-}

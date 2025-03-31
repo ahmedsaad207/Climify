@@ -18,6 +18,11 @@ fun timeStampToHumanDate(timeStamp: Long, format: String): String {
     return sdf.format(timeStamp * 1000)
 }
 
+fun Long.toFormat(format: String): String {
+    val sdf = SimpleDateFormat(format, Locale.getDefault())
+    return sdf.format(this)
+}
+
 fun String.getCountryNameFromCode(): String? {
     val locale = Locale("", this)
     return locale.displayCountry
@@ -120,7 +125,6 @@ fun Int.toLocalizedNumber(): String {
     val language = Locale.getDefault().language
     return if (language == "ar") convertToArabicNumbers(this.toString()) else this.toString()
 }
-
 
 fun Context.getTempUnitSymbol(unit: String): String {
     return when (unit) {

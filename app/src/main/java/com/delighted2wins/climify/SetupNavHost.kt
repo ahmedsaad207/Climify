@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.delighted2wins.climify.alarm.AlarmUI
+import com.delighted2wins.climify.domainmodel.CurrentWeather
 import com.delighted2wins.climify.favorite.FavoriteUI
 import com.delighted2wins.climify.home.HomeUi
 import com.delighted2wins.climify.locationselection.LocationSelectionUI
@@ -20,13 +21,15 @@ fun SetupNavHost(
     showFloatingActionButton: MutableState<Boolean>,
     showBottomNabBar: MutableState<Boolean>,
     snackBarHostState: SnackbarHostState,
+    notificationWeather: CurrentWeather?,
+    onSetAlarm: (() -> Unit) -> Unit,
 ) {
     NavHost(
         navController = navController,
         startDestination = Screen.Home
     ) {
         composable<Screen.Home> {
-            HomeUi(showBottomNabBar) {
+            HomeUi(notificationWeather, showBottomNabBar) {
                 navController.navigate(Screen.LocationSelection(it))
             }
         }
@@ -38,7 +41,7 @@ fun SetupNavHost(
         }
 
         composable<Screen.Alarm> {
-            AlarmUI()
+            AlarmUI(snackBarHostState, onSetAlarm)
         }
 
         composable<Screen.Settings> {
@@ -57,10 +60,8 @@ fun SetupNavHost(
             LocationSelectionUI(showBottomNabBar, isFavorite) {
                 if (isFavorite) {
                     navController.navigateUp()
-                    showFloatingActionButton.value = true
                 } else {
                     navController.navigate(Screen.Home)
-                    showFloatingActionButton.value = false
                 }
 
 

@@ -24,4 +24,8 @@ class WeathersLocalDataSourceImpl(private val dao: WeatherDao) : WeathersLocalDa
         dao.deleteWeather(weather)
     }
 
+    override fun getCachedWeather(): Flow<CurrentWeather> {
+        return dao.getCachedWeather()
+    }
+
 }

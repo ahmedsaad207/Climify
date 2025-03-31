@@ -8,7 +8,10 @@ import com.delighted2wins.climify.domainmodel.LocationInfo
 import com.delighted2wins.climify.enums.Language
 import com.delighted2wins.climify.enums.TempUnit
 import com.delighted2wins.climify.utils.Constants
+import com.delighted2wins.climify.utils.filterForecastToHoursAndDays
 import com.delighted2wins.climify.utils.toCurrentWeather
+import com.delighted2wins.climify.utils.toForecastWeather
+import com.delighted2wins.climify.utils.toForecastWeatherList
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.AutocompletePrediction
 import com.google.android.libraries.places.api.model.Place
@@ -17,11 +20,13 @@ import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.android.libraries.places.api.net.PlacesClient
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -81,10 +86,13 @@ class LocationSelectionViewModel(
     }
 
     fun insertWeather(latLng: LatLng) {
-        val unit = getData<TempUnit>(Constants.KEY_TEMP_UNIT).value
+        val units = getData<TempUnit>(Constants.KEY_TEMP_UNIT).value
         val lang = getData<Language>(Constants.KEY_LANG).value
+        val lat = latLng.latitude
+        val lon = latLng.longitude
+
         viewModelScope.launch {
-            try {
+            /*try {
                 val currentWeather =
                     repository.getCurrentWeather(
                         latLng.latitude,
@@ -99,10 +107,57 @@ class LocationSelectionViewModel(
                         .first()
 
                 repository.insertWeather(currentWeather)
-            } catch (e: Exception) {
-                Log.i("TAG", "insertWeather: Error insert weather: ${e.message}")
             }
+            catch (e: Exception) {
+                Log.i("TAG", "insertWeather: Error insert weather: ${e.message}")
+            }*/
+            try {
+                val currentWeatherDeferred = async {
+                    repository.getCurrentWeather(lat, lon, units, lang)
+                        .catch { e ->
+                            // TODO show message
+                        }
+                        .map {
+                            it.toCurrentWeather()
+                        }
+                        .onEach {
+                            it.unit = units
+                        }
+                        .firstOrNull()
+                }
 
+                val upcomingForecastDeferred = async {
+                    repository.getUpcomingForecast(lat, lon, units)
+                        .catch { e ->
+                            // TODO show message
+                        }
+                        .map {
+                            it.toForecastWeatherList(units)
+                        }
+                        .firstOrNull()
+                }
+
+                val currentWeather = currentWeatherDeferred.await()
+                val upcomingForecast = upcomingForecastDeferred.await()
+
+                if (currentWeather != null && upcomingForecast != null) {
+                    val (hours, days) = filterForecastToHoursAndDays(
+                        currentWeather.toForecastWeather().apply { unit = units },
+                        upcomingForecast
+                    )
+
+                    currentWeather.hoursForecast = hours
+                    currentWeather.daysForecast = days
+                    val inserted = repository.insertWeather(currentWeather)
+//                    Log.i("TAG", "fetchWeatherData: inserted in map screen = $inserted") // TODO show message
+                }
+                else {
+                    // TODO show message
+                }
+            }
+            catch (e: Exception) {
+                // TODO message
+            }
         }
     }
 
