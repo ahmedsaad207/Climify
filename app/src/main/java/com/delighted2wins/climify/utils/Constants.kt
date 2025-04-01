@@ -22,6 +22,7 @@ object Constants {
     const val KEY_END_DURATION = "end_duration"
     const val KEY_ALARM = "alarm"
     const val KEY_ALARM_TAG = "alarm_tag"
+    const val REQUEST_CODE_NOTIFICATIONS = 101
 }
 
 //const val RC_PERMISSION = 100

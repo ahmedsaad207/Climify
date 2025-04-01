@@ -33,4 +33,5 @@
     <string name="kelvin_symbol">ك</string>
     <string name="fahrenheit_symbol">°ف</string>
     <string name="add_to_favorite">Add to Favorite</string>
+    <string name="please_select_time_in_future">Please Select time in Future</string>
 </resources>

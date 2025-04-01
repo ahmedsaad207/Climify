@@ -112,12 +112,12 @@ private fun ShowMap(
     var savedLocation by remember { mutableStateOf(LatLng(0.0, 0.0)) }
 
     val (lat, lon) = viewModel.getData<Pair<Double, Double>>("LOCATION")
-    val userLocation = viewModel.getData<LocationSource>(Constants.KEY_LOCATION_SOURCE).value
+    val userLocation = viewModel.getData<LocationSource>(Constants.KEY_LOCATION_SOURCE)
     val cities = viewModel.predictions.collectAsStateWithLifecycle()
     val selectedLocation = viewModel.currentLocation.collectAsStateWithLifecycle()
     val selectedLatLng by viewModel.selectedLatLng.collectAsStateWithLifecycle()
 
-    if (userLocation == LocationSource.MAP.value) {
+    if (userLocation == LocationSource.MAP) {
         savedLocation = if (lat != 0.0 && lon != 0.0) {
             LatLng(lat, lon)
         } else {
@@ -126,6 +126,7 @@ private fun ShowMap(
     } else { // TODO check permission
         context.getUserLocationUsingGps { latitude, longitude ->
             savedLocation = LatLng(latitude, longitude)
+            viewModel.getLocationInfo(latitude, longitude)
         }
     }
 
@@ -136,7 +137,11 @@ private fun ShowMap(
     }
     val marker = remember { mutableStateOf(MarkerState(position = savedLocation)) }
 
-    LaunchedEffect(Unit) { viewModel.getLocationInfo(lat, lon) }
+    LaunchedEffect(Unit) {
+        if (userLocation == LocationSource.MAP) {
+            viewModel.getLocationInfo(lat, lon)
+        }
+    }
     LaunchedEffect(input) {
         if (input.isBlank()) {
             predictions = emptyList()
@@ -217,6 +222,7 @@ private fun ShowMap(
         }
 
         if (selectedLocation.value.lat != null && selectedLocation.value.lon != null) {
+            Log.i("TAG", "ShowMap: show pop up")
             val newLat = marker.value.position.latitude
             val newLon = marker.value.position.longitude
             val buttonText = if (isFavorite) {
@@ -267,6 +273,7 @@ private fun ShowMap(
                         onClick = {
                             if (!isFavorite) {
                                 viewModel.saveData(Pair(newLat, newLon))
+                                viewModel.saveData(LocationSource.MAP)
                             } else {
                                 viewModel.insertWeather(marker.value.position)
                             }
@@ -282,6 +289,7 @@ private fun ShowMap(
                     }
                 }
             }
+
             /*Column(
                 modifier = Modifier
                     .wrapContentWidth()

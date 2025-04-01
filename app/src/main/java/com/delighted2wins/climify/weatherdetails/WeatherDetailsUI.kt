@@ -9,12 +9,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,20 +32,27 @@ import com.delighted2wins.climify.home.components.DisplayHomeData
 import com.delighted2wins.climify.home.components.LoadingIndicator
 import com.delighted2wins.climify.home.getRepo
 import com.delighted2wins.climify.utils.Constants
+import com.delighted2wins.climify.utils.NetworkManager
+import kotlinx.coroutines.launch
 
 @Composable
 fun DetailsUI(
     id: Int,
     showBottomNabBar: MutableState<Boolean>,
     showFloatingActionButton: MutableState<Boolean>,
+    snackBarHostState: SnackbarHostState,
     onNavigateBack: () -> Unit
 ) {
-
+    var flag by remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val viewModel: WeatherDetailsViewModel =
         viewModel(factory = WeatherDetailsViewModelFactory(getRepo(context)))
     val weather by viewModel.weather.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val networkManager = NetworkManager(context)
+    val isOnline by networkManager.observeNetworkChanges()
+        .collectAsStateWithLifecycle(networkManager.isNetworkAvailable())
 
     LaunchedEffect(Unit) {
         showBottomNabBar.value = false
@@ -50,12 +60,25 @@ fun DetailsUI(
         viewModel.getWeatherById(id)
     }
 
-    // check internet if internet available get from api all data if not get from room
-    var isInternetAvailable by remember { mutableStateOf(false) }
-
     LaunchedEffect(weather) {
         weather?.let {
-            viewModel.fetchWeatherData(it, isOnline = isInternetAvailable)
+            viewModel.fetchWeatherData(it, isOnline = isOnline)
+        }
+    }
+
+    LaunchedEffect(isOnline) {
+        val message =
+            if (isOnline) (if (flag) "" else "Your Internet connection has been restored.") else "You are currently offline."
+        if (message.isNotBlank()) {
+            flag = false
+            scope.launch {
+                snackBarHostState.currentSnackbarData?.dismiss()
+                snackBarHostState.showSnackbar(
+                    message,
+                    null,
+                    duration = SnackbarDuration.Short
+                )
+            }
         }
     }
 
@@ -70,7 +93,7 @@ fun DetailsUI(
                     currentWeather,
                     forecastHours = forecastHours,
                     forecastDays = forecastDays,
-                    isOnline = isInternetAvailable,
+                    isOnline = isOnline,
                     backButton = true,
                     onNavigateBack = onNavigateBack,
                     appUnit = appUnit
@@ -79,8 +102,7 @@ fun DetailsUI(
         }
 
         is Response.Failure -> {
-            if (isInternetAvailable) {
-                isInternetAvailable = false
+            if (isOnline) {
                 weather?.let {
                     viewModel.fetchWeatherData(it, isOnline = false)
                 }

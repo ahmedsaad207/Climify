@@ -1,13 +1,22 @@
 package com.delighted2wins.climify.utils
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.net.NetworkInfo
+import android.os.Build
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.delighted2wins.climify.R
 import com.delighted2wins.climify.domainmodel.ForecastWeather
 import com.delighted2wins.climify.enums.TempUnit
 import com.delighted2wins.climify.enums.WindSpeedUnit
+import com.delighted2wins.climify.utils.Constants.REQUEST_CODE_NOTIFICATIONS
 import com.google.android.gms.location.LocationServices
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -149,13 +158,9 @@ fun Context.getUserLocationUsingGps(onResult: (latitude: Double, longitude: Doub
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
     fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-        if (location != null) {
-            onResult(location.latitude, location.longitude)
-        } else {
-            onResult(0.0, 0.0)
-        }
+        onResult(location?.latitude ?: 31.252321, location?.longitude ?: 29.992283)
     }.addOnFailureListener {
-        onResult(0.0, 0.0)
+        onResult(31.252321, 29.992283)
     }
 }
 
@@ -198,5 +203,28 @@ fun String.convertWindSpeed(value: Double, appUnit: String): Double {
         else -> value  // Default case (if appUnit is invalid)
     }
 }
+
+fun checkAndRequestPostNotificationPermission(
+    context: Context,
+    onPermissionGranted: () -> Unit
+) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+            == PackageManager.PERMISSION_GRANTED
+        ) {
+            onPermissionGranted()
+        } else {
+            ActivityCompat.requestPermissions(
+                context as Activity,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                REQUEST_CODE_NOTIFICATIONS
+            )
+        }
+    } else {
+        onPermissionGranted()
+    }
+}
+
+
 
 
