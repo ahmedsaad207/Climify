@@ -29,7 +29,7 @@ fun SetupNavHost(
         startDestination = Screen.Home
     ) {
         composable<Screen.Home> {
-            HomeUi(notificationWeather, showBottomNabBar) {
+            HomeUi(notificationWeather, showBottomNabBar,snackBarHostState) {
                 navController.navigate(Screen.LocationSelection(it))
             }
         }
@@ -50,7 +50,7 @@ fun SetupNavHost(
 
         composable<Screen.Details> {
             val id = it.toRoute<Screen.Details>().id
-            DetailsUI(id, showBottomNabBar, showFloatingActionButton) {
+            DetailsUI(id, showBottomNabBar, showFloatingActionButton, snackBarHostState) {
                 navController.navigateUp()
             }
         }

@@ -79,6 +79,7 @@ import com.delighted2wins.climify.domainmodel.CurrentWeather
 import com.delighted2wins.climify.home.components.LoadingIndicator
 import com.delighted2wins.climify.home.getRepo
 import com.delighted2wins.climify.utils.Constants
+import com.delighted2wins.climify.utils.checkAndRequestPostNotificationPermission
 import com.delighted2wins.climify.utils.getCountryNameFromCode
 import com.delighted2wins.climify.utils.toFormat
 import com.delighted2wins.climify.worker.WeatherAlarmWorker
@@ -117,27 +118,29 @@ fun AlarmUI(snackBarHostState: SnackbarHostState, onSetAlarm: (() -> Unit) -> Un
                     scope.launch {
                         snackBarHostState.currentSnackbarData?.dismiss()
                         snackBarHostState.showSnackbar(
-                            message = "Please Select time in Future",
+                            message = context.getString(R.string.please_select_time_in_future),
                             duration = SnackbarDuration.Short
                         )
                     }
                 } else {
-                    val durationInMillis = (endDate - startDate)
-                    val alarm = Alarm(
-                        System.currentTimeMillis().toString(),
-                        startDate,
-                        durationInMillis,
-                        Constants.TYPE_NOTIFICATION
-                    )
-                    scheduleAlarmWork(context, alarm)
-                    viewModel.insertAlarm(alarm)
-
-                    scope.launch {
-                        snackBarHostState.currentSnackbarData?.dismiss()
-                        snackBarHostState.showSnackbar(
-                            message = "Alarm Created successfully",
-                            duration = SnackbarDuration.Short
+                    checkAndRequestPostNotificationPermission(context) {
+                        val durationInMillis = (endDate - startDate)
+                        val alarm = Alarm(
+                            System.currentTimeMillis().toString(),
+                            startDate,
+                            durationInMillis,
+                            Constants.TYPE_NOTIFICATION
                         )
+                        scheduleAlarmWork(context, alarm)
+                        viewModel.insertAlarm(alarm)
+
+                        scope.launch {
+                            snackBarHostState.currentSnackbarData?.dismiss()
+                            snackBarHostState.showSnackbar(
+                                message = "Alarm Created successfully",
+                                duration = SnackbarDuration.Short
+                            )
+                        }
                     }
                 }
             }
@@ -743,7 +746,6 @@ fun getDateTime(context: Context, onDateTimeSelected: (Long) -> Unit) {
     datePicker.show()
 }
 
-
 fun calculateInitialDelay(selectedTimeInMillis: Long): Long {
     val currentTimeMillis = System.currentTimeMillis()
     return if (selectedTimeInMillis > currentTimeMillis) {
@@ -752,11 +754,3 @@ fun calculateInitialDelay(selectedTimeInMillis: Long): Long {
         0
     }
 }
-
-
-
-
-
-
-
-

@@ -38,4 +38,5 @@
     <string name="kelvin_symbol">K</string>
     <string name="fahrenheit_symbol">°F</string>
     <string name="add_to_favorite">Add to Favorite</string>
+    <string name="please_select_time_in_future">Please Select time in Future</string>
 </resources>
