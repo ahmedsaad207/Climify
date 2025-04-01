@@ -1,8 +1,8 @@
 package com.delighted2wins.climify.data.repo
 
 import com.delighted2wins.climify.data.local.db.AlarmsLocalDataSource
-import com.delighted2wins.climify.data.local.db.WeathersLocalDataSource
-import com.delighted2wins.climify.data.local.preferences.PreferencesDataSourceImpl
+import com.delighted2wins.climify.data.local.db.IWeathersLocalDataSource
+import com.delighted2wins.climify.data.local.preferences.PreferencesDataSource
 import com.delighted2wins.climify.data.model.CurrentWeatherResponse
 import com.delighted2wins.climify.data.model.UpcomingForecastResponse
 import com.delighted2wins.climify.data.remote.WeatherRemoteDataSource
@@ -13,9 +13,9 @@ import kotlinx.coroutines.flow.Flow
 
 class WeatherRepositoryImpl(
     private val remote: WeatherRemoteDataSource,
-    private val weatherLocal: WeathersLocalDataSource,
+    private val weatherLocal: IWeathersLocalDataSource,
     private val alarmLocal: AlarmsLocalDataSource,
-    private val preferences: PreferencesDataSourceImpl
+    private val preferences: PreferencesDataSource
     ) : WeatherRepository {
     override suspend fun getCurrentWeather(
         lat: Double,

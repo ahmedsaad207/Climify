@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -30,7 +31,6 @@ import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -43,11 +43,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -62,7 +61,9 @@ import androidx.navigation.compose.rememberNavController
 import com.delighted2wins.climify.domainmodel.Alarm
 import com.delighted2wins.climify.domainmodel.CurrentWeather
 import com.delighted2wins.climify.enums.Language
-import com.delighted2wins.climify.home.getRepo
+import com.delighted2wins.climify.features.home.getRepo
+import com.delighted2wins.climify.navigation.Screen
+import com.delighted2wins.climify.navigation.SetupNavHost
 import com.delighted2wins.climify.service.WeatherUpdateService
 import com.delighted2wins.climify.utils.Constants
 import com.delighted2wins.climify.utils.updateAppLanguage
@@ -107,8 +108,6 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            var flag by remember { mutableStateOf(true) }
-            val scope = rememberCoroutineScope()
             val showFloatingActionButton = remember { mutableStateOf(false) }
             val snackBarHostState = remember { SnackbarHostState() }
             val showBottomNabBar = remember { mutableStateOf(true) }
@@ -124,7 +123,8 @@ class MainActivity : ComponentActivity() {
                         BottomAppBar(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .wrapContentHeight(),
+                                .wrapContentHeight()
+                                .padding(horizontal = 18.dp, vertical = 8.dp),
                             containerColor = Color.Transparent
                         ) {
                             BottomNavigationBar(
@@ -139,25 +139,38 @@ class MainActivity : ComponentActivity() {
                 },
                 floatingActionButton = {
                     if (showFloatingActionButton.value) {
-                        FloatingActionButton(onClick = {
-                            when (navController.currentDestination?.route?.substringAfterLast(".")
-                                ?: "") {
-                                Screen.Alarm::class.simpleName -> {
-                                    Log.i("TAG", "Alarm clicked: ")
-                                    fabAction.value.invoke()
-                                }
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(colorResource(R.color.deep_purple), colorResource(R.color.dark_violet))
+                                    ),
+                                    shape = CircleShape
+                                )
+                                .shadow(8.dp, shape = CircleShape)
+                                .clickable {
+                                    when (navController.currentDestination?.route?.substringAfterLast(".")
+                                        ?: "") {
+                                        Screen.Alarm::class.simpleName -> {
+                                            Log.i("TAG", "Alarm clicked: ")
+                                            fabAction.value.invoke()
+                                        }
 
-                                Screen.Favorite::class.simpleName -> {
-                                    Log.i("TAG", "Favorite clicked: ")
-                                    navController.navigate(Screen.LocationSelection(true))
-                                    showFloatingActionButton.value = false
+                                        Screen.Favorite::class.simpleName -> {
+                                            Log.i("TAG", "Favorite clicked: ")
+                                            navController.navigate(Screen.LocationSelection(true))
+                                            showFloatingActionButton.value = false
+                                        }
+                                    }
                                 }
-                            }
-                        })
-                        {
+                        ) {
                             Icon(
                                 imageVector = fabIcon.value,
-                                contentDescription = null
+                                contentDescription = "",
+                                tint = Color.White,
+                                modifier = Modifier.size(32.dp)
                             )
                         }
                     }
@@ -229,8 +242,8 @@ fun BottomNavigationBar(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF31255A), // Deep Blue-Purple
-                        Color(0xFF2B235A)  // Darker Purple
+                        colorResource(R.color.grayish_green),
+                        colorResource(R.color.deep_gray)
                     )
                 )
             ),
@@ -272,9 +285,9 @@ fun BottomNavigationBar(
                                 .background(
                                     Brush.verticalGradient(
                                         colors = listOf(
-                                            Color(0xFF75B4E3),
-                                            Color(0xFF54416D)
-                                        ) // Soft Blue to Dark Purple
+                                            colorResource(R.color.neutral_gray),
+                                            colorResource(R.color.grayish_green )
+                                        )
                                     ),
                                     shape = RoundedCornerShape(30.dp)
                                 )
@@ -286,16 +299,14 @@ fun BottomNavigationBar(
                         imageVector = navItem.icon,
                         contentDescription = null,
                         modifier = Modifier.size(28.dp),
-                        tint = if (selectedNavigationIndex.intValue == i) Color.White else Color(
-                            0xFF8FE0FF
-                        ) // Light Cyan
+                        tint = if (selectedNavigationIndex.intValue == i) Color.White
+                        else colorResource(R.color.neutral_gray)
                     )
                 }
             }
         }
     }
 }
-
 
 data class NavigationItem(
     var icon: ImageVector,

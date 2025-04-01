@@ -64,6 +64,10 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.places)
     testImplementation(libs.junit)
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.junit.jupiter)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -108,4 +112,22 @@ dependencies {
 
     // work
     implementation("androidx.work:work-runtime-ktx:2.10.0")
+
+    // hamcrest
+    testImplementation("org.hamcrest:hamcrest:2.2")
+    testImplementation("org.hamcrest:hamcrest-library:2.2")
+    androidTestImplementation("org.hamcrest:hamcrest:2.2")
+    androidTestImplementation("org.hamcrest:hamcrest-library:2.2")
+
+    // mockk
+    testImplementation("io.mockk:mockk-android:1.13.6")
+    testImplementation("io.mockk:mockk-agent:1.13.6")
+
+    // coroutines
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+
+    // AndroidX and Robolectric
+    testImplementation("androidx.test.ext:junit-ktx:1.1.3")
+    testImplementation("androidx.test:core-ktx:1.5.0")
+    testImplementation("org.robolectric:robolectric:4.11")
 }

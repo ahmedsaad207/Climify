@@ -31,7 +31,7 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.delighted2wins.climify.MainActivity
 import com.delighted2wins.climify.R
-import com.delighted2wins.climify.alarm.WeatherOverlay
+import com.delighted2wins.climify.features.alarm.WeatherOverlay
 import com.delighted2wins.climify.data.remote.RetrofitClient
 import com.delighted2wins.climify.data.repo.WeatherRepository
 import com.delighted2wins.climify.domainmodel.Alarm
@@ -39,11 +39,11 @@ import com.delighted2wins.climify.domainmodel.CurrentWeather
 import com.delighted2wins.climify.enums.Language
 import com.delighted2wins.climify.enums.LocationSource
 import com.delighted2wins.climify.enums.TempUnit
-import com.delighted2wins.climify.home.getRepo
+import com.delighted2wins.climify.features.home.getRepo
 import com.delighted2wins.climify.utils.Constants
 import com.delighted2wins.climify.utils.getTempUnitSymbol
 import com.delighted2wins.climify.utils.getUserLocationUsingGps
-import com.delighted2wins.climify.utils.toCurrentWeather
+import com.delighted2wins.climify.mappers.toCurrentWeather
 import com.google.gson.Gson
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -65,6 +65,7 @@ class WeatherUpdateService : Service(), LifecycleOwner, SavedStateRegistryOwner 
         savedStateRegistryController.performRestore(null)
         lifecycleRegistry.currentState = Lifecycle.State.CREATED
         rep = getRepo(this)
+        mediaPlayer = MediaPlayer.create(this, R.raw.song)
     }
 
     private fun startForegroundService(notification: Notification) {
@@ -140,7 +141,6 @@ class WeatherUpdateService : Service(), LifecycleOwner, SavedStateRegistryOwner 
     }
 
     private fun playSound() {
-        mediaPlayer = MediaPlayer.create(this, R.raw.song)
         mediaPlayer.isLooping = true
         mediaPlayer.start()
     }
