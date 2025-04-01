@@ -3,7 +3,7 @@ package com.delighted2wins.climify.data.local.db
 import com.delighted2wins.climify.domainmodel.CurrentWeather
 import kotlinx.coroutines.flow.Flow
 
-class WeathersLocalDataSourceImpl(private val dao: WeatherDao) : WeathersLocalDataSource {
+class WeathersLocalDataSourceImpl(private val dao: WeatherDao) : IWeathersLocalDataSource {
     override suspend fun insertWeather(weather: CurrentWeather): Long {
         return dao.insertWeather(weather)
     }
