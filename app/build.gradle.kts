@@ -1,12 +1,21 @@
+
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    kotlin("plugin.serialization") version "2.1.0"
+    id("com.google.devtools.ksp")
 }
 
 android {
     namespace = "com.delighted2wins.climify"
     compileSdk = 35
+    val file = rootProject.file("local.properties")
+    val properties = Properties()
+    properties.load(FileInputStream(file))
 
     defaultConfig {
         applicationId = "com.delighted2wins.climify"
@@ -16,6 +25,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "ApiKey", properties.getProperty("apikey"))
+        buildConfigField("String", "PlacesApiKey", properties.getProperty("places-api-key"))
+        resValue ("string", "places_api_key", properties.getProperty("places-api-key"))
     }
 
     buildTypes {
@@ -36,6 +48,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -49,11 +62,72 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.places)
     testImplementation(libs.junit)
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.junit.jupiter)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // viewModel and livedata compose
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.5")
+    implementation("androidx.compose.runtime:runtime-livedata:1.7.8")
+
+    // glide compose
+    implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
+
+    //navigation compose
+    implementation("androidx.navigation:navigation-compose:2.8.8")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
+
+    // Maps
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.maps.android:maps-compose:4.4.1")
+
+    // Places
+    implementation("com.google.maps.android:places-compose:0.1.2")
+
+    // Room
+    val room_version = "2.6.1"
+    implementation("androidx.room:room-runtime:$room_version")
+    implementation("androidx.room:room-ktx:$room_version")
+    ksp("androidx.room:room-compiler:$room_version")
+
+    // Lottie
+    implementation("com.airbnb.android:lottie-compose:6.6.4")
+
+    // material icons
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
+//    implementation("com.google.accompanist:accompanist-drawablepainter:0.35.0-alpha")
+
+    // work
+    implementation("androidx.work:work-runtime-ktx:2.10.0")
+
+    // hamcrest
+    testImplementation("org.hamcrest:hamcrest:2.2")
+    testImplementation("org.hamcrest:hamcrest-library:2.2")
+    androidTestImplementation("org.hamcrest:hamcrest:2.2")
+    androidTestImplementation("org.hamcrest:hamcrest-library:2.2")
+
+    // mockk
+    testImplementation("io.mockk:mockk-android:1.13.6")
+    testImplementation("io.mockk:mockk-agent:1.13.6")
+
+    // coroutines
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+
+    // AndroidX and Robolectric
+    testImplementation("androidx.test.ext:junit-ktx:1.1.3")
+    testImplementation("androidx.test:core-ktx:1.5.0")
+    testImplementation("org.robolectric:robolectric:4.11")
 }

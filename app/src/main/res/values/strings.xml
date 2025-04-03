@@ -1,3 +1,71 @@
 <resources>
-    <string name="app_name">Climify</string>
+    <string name="app_name" translatable="false">Climify</string>
+    <string name="last_update">"Last update: "</string>
+    <string name="today">Today</string>
+    <string name="humidity">Humidity</string>
+    <string name="pressure">Pressure</string>
+    <string name="hpa">hPa</string>
+    <string name="wind">Wind</string>
+    <string name="clouds">Clouds</string>
+    <string name="percentage_symbol">%</string>
+    <string name="short_day_format" translatable="false">EEE</string>
+    <string name="month_name_day" translatable="false">MMMM, dd</string>
+    <string name="upcoming_forecast">Upcoming Forecast</string>
+    <string name="favorite_locations">Favorite Locations</string>
+    <string name="no_favorite_locations_found_add_some_to_get_started">No favorite locations found. Add some to get started!</string>
+    <string name="last_update_with_date">Last update: %1$s</string>
+    <string name="day_abbr_month_hour_minute_am_pm" translatable="false">\ndd MMM, hh:mm a</string>
+    <string name="location_deleted_successfully">Location Deleted Successfully</string>
+    <string name="undo">Undo</string>
+    <string name="select_location">Select location</string>
+    <string name="language">Language</string>
+    <string name="arabic_lang" translatable="false">عربى</string>
+    <string name="english" translatable="false">English</string>
+    <string name="default_lang">Default</string>
+    <string name="temp_unit">Temp Unit</string>
+    <string name="kelvin">Kelvin K</string>
+    <string name="celsius">Celsius °C</string>
+    <string name="fahrenheit">Fahrenheit °F</string>
+    <string name="wind_speed_unit">Wind Speed Unit</string>
+    <string name="meter_sec">meter/sec</string>
+    <string name="mile_hour">mile/hour</string>
+    <string name="select_your_location">Select Your Location</string>
+    <string name="auto_detect_gps">Auto Detect (GPS)</string>
+    <string name="using_map">Using Map</string>
+    <string name="celsius_symbol">°C</string>
+    <string name="now">Now</string>
+    <string name="add_item">Add Item</string>
+    <string name="kelvin_symbol">K</string>
+    <string name="fahrenheit_symbol">°F</string>
+    <string name="add_to_favorite">Add to Favorite</string>
+    <string name="please_select_time_in_future">Please Select time in Future</string>
+    <string name="alarm_created_successfully">Alarm Created successfully</string>
+    <string name="alarm">Alarm</string>
+    <string name="set_your_alarm">Set your Alarm</string>
+    <string name="start_duration">Start Duration</string>
+    <string name="end_duration">End Duration</string>
+    <string name="alarm_deleted_successfully">Alarm deleted successfully</string>
+    <string name="delete">Delete</string>
+    <string name="no_alarms_found">No Alarms Found</string>
+    <string name="close">Close</string>
+    <string name="cancel">cancel</string>
+    <string name="open">Open</string>
+    <string name="you_can_t_enable_past_alarm">You can\'t enable past alarm</string>
+    <string name="alarm_popup">Alarm</string>
+    <string name="notification">Notification</string>
+    <string name="location_deleted_from_favorite">Location deleted from favorite</string>
+    <string name="unknown">Unknown</string>
+    <string name="your_internet_connection_has_been_restored">Your Internet connection has been restored.</string>
+    <string name="you_are_currently_offline">You are currently offline.</string>
+    <string name="request_location_permission">Request Location Permission</string>
+    <string name="location_permission_is_needed_for_weather_updates">Location permission is needed for weather updates.</string>
+    <string name="open_settings">Open Settings</string>
+    <string name="permission_permanently_denied_enable_it_from_settings">Permission permanently denied. Enable it from Settings.</string>
+    <string name="location_services_are_disabled_please_enable_gps">Location services are disabled. Please enable GPS.</string>
+    <string name="enable_gps">Enable GPS</string>
+    <string name="no_internet_connection">No Internet connection</string>
+    <string name="back">Back</string>
+    <string name="location">Location</string>
+    <string name="settings">Settings</string>
+    <string name="please_select_type_of_alarm">Please select type of alarm</string>
 </resources>
