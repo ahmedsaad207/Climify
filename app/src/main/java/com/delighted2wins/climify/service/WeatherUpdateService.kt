@@ -31,7 +31,6 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.delighted2wins.climify.MainActivity
 import com.delighted2wins.climify.R
-import com.delighted2wins.climify.features.alarm.WeatherOverlay
 import com.delighted2wins.climify.data.remote.RetrofitClient
 import com.delighted2wins.climify.data.repo.WeatherRepository
 import com.delighted2wins.climify.domainmodel.Alarm
@@ -39,11 +38,13 @@ import com.delighted2wins.climify.domainmodel.CurrentWeather
 import com.delighted2wins.climify.enums.Language
 import com.delighted2wins.climify.enums.LocationSource
 import com.delighted2wins.climify.enums.TempUnit
+import com.delighted2wins.climify.features.alarm.WeatherOverlay
 import com.delighted2wins.climify.features.home.getRepo
+import com.delighted2wins.climify.mappers.toCurrentWeather
 import com.delighted2wins.climify.utils.Constants
+import com.delighted2wins.climify.utils.checkIfLangFromAppOrSystem
 import com.delighted2wins.climify.utils.getTempUnitSymbol
 import com.delighted2wins.climify.utils.getUserLocationUsingGps
-import com.delighted2wins.climify.mappers.toCurrentWeather
 import com.google.gson.Gson
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -56,16 +57,51 @@ class WeatherUpdateService : Service(), LifecycleOwner, SavedStateRegistryOwner 
     private val lifecycleRegistry = LifecycleRegistry(this) // Create LifecycleRegistry
     private val savedStateRegistryController = SavedStateRegistryController.create(this)
     private lateinit var rep: WeatherRepository
+    private val channelId = "weather_alert_channel"
+
 
     override fun onCreate() { // api = 31
         super.onCreate()
-        Log.i("TAG", "onCreate: service")
-//        startForegroundService(createNotification())
         savedStateRegistryController.performAttach()
         savedStateRegistryController.performRestore(null)
         lifecycleRegistry.currentState = Lifecycle.State.CREATED
+
         rep = getRepo(this)
-        mediaPlayer = MediaPlayer.create(this, R.raw.song)
+        mediaPlayer = MediaPlayer.create(this, R.raw.alarm_ringtone)
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+
+        // dismiss notification
+        if (intent?.action == "STOP_SERVICE") {
+            dismiss()
+            return START_NOT_STICKY
+        }
+
+        // lifecycle
+        lifecycleRegistry.currentState = Lifecycle.State.RESUMED
+
+        val lang = this.checkIfLangFromAppOrSystem(rep.getData<Language>(Constants.KEY_LANG))
+        val unit = rep.getData<TempUnit>(Constants.KEY_TEMP_UNIT).value
+        val userLocation = rep.getData<LocationSource>(Constants.KEY_LOCATION_SOURCE)
+
+        val alarmJson = intent?.getStringExtra(Constants.KEY_ALARM)
+        val alarm = Gson().fromJson(alarmJson, Alarm::class.java)
+
+        alarm?.let {
+            Log.i("TAG", "onStartCommand: alarm type is ${alarm.type}")
+            if (userLocation == LocationSource.MAP) {
+                val (lat, lon) = rep.getData<Pair<Double, Double>>("")
+                makeRequestAndShowNotification(lat, lon, unit, lang, alarm)
+            } else {
+                getUserLocationUsingGps { lat, lon ->
+                    makeRequestAndShowNotification(lat, lon, unit, lang, alarm)
+                }
+            }
+        }
+
+
+        return START_STICKY
     }
 
     private fun startForegroundService(notification: Notification) {
@@ -80,45 +116,13 @@ class WeatherUpdateService : Service(), LifecycleOwner, SavedStateRegistryOwner 
         }
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == "STOP_SERVICE") {
-            dismiss()
-            return START_NOT_STICKY
-        }
-        lifecycleRegistry.currentState = Lifecycle.State.RESUMED
-
-        val lang = rep.getData<Language>(Constants.KEY_LANG).value
-        val unit = rep.getData<TempUnit>(Constants.KEY_TEMP_UNIT).value
-        val userLocation = rep.getData<LocationSource>(Constants.KEY_LOCATION_SOURCE).value
-
-        val alarmJson = intent?.getStringExtra(Constants.KEY_ALARM)
-        val alarm = Gson().fromJson(alarmJson, Alarm::class.java)
-        val duration = alarm.endDuration
-
-        if (alarm.type == Constants.TYPE_NOTIFICATION) {
-//            startForeground(1, createNotification())
-        } else {
-//            startForeground(createNotification())
-        }
-
-        if (userLocation == LocationSource.MAP.value) {
-            val (lat, lon) = rep.getData<Pair<Double, Double>>("")
-            makeRequestAndShowNotification(lat, lon, unit, lang, alarm, duration)
-        } else {
-            getUserLocationUsingGps { lat, lon ->
-                makeRequestAndShowNotification(lat, lon, unit, lang, alarm, duration)
-            }
-        }
-        return START_STICKY
-    }
 
     private fun makeRequestAndShowNotification(
         lat: Double,
         lon: Double,
         unit: String,
         lang: String,
-        alarm: Alarm,
-        duration: Long
+        alarm: Alarm
     ) {
         lifecycleScope.launch {
             try {
@@ -128,15 +132,26 @@ class WeatherUpdateService : Service(), LifecycleOwner, SavedStateRegistryOwner 
                     unit,
                     lang
                 ).toCurrentWeather()
-                startForegroundService(createNotification(currentWeather, alarm, unit))
-                //                    showOverlayDialog(currentWeather)
+                createNotificationAndStartService(alarm, currentWeather, unit)
             } catch (e: Exception) {
-                startForegroundService(createNotification(null, alarm, unit))
-                //showOverlayDialog(null)
+                createNotificationAndStartService(alarm, null, unit)
             }
             playSound()
-            delay(duration)
+            delay(alarm.endDuration)
             dismiss()
+        }
+    }
+
+    private fun createNotificationAndStartService(
+        alarm: Alarm,
+        currentWeather: CurrentWeather?,
+        unit: String
+    ) {
+        if (alarm.type == Constants.TYPE_NOTIFICATION) {
+            startForegroundService(createNotification(currentWeather, alarm, unit))
+        } else {
+            showOverlayDialog(currentWeather)
+            startForegroundService(createNotification(currentWeather, alarm, unit))
         }
     }
 
@@ -150,21 +165,7 @@ class WeatherUpdateService : Service(), LifecycleOwner, SavedStateRegistryOwner 
         alarm: Alarm,
         unit: String
     ): Notification {
-        val channelId = "weather_alert_channel"
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {   // 26+
-            val channel = NotificationChannel(
-                channelId,
-                "Weather Alerts",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description =
-                    "Get timely weather updates, alerts, and reminders based on your location."
-            }
-
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager?.createNotificationChannel(channel)
-        }
+        createNotificationChannel()
 
         val stopIntent = Intent(this, WeatherUpdateService::class.java).apply {
             action = "STOP_SERVICE"
@@ -184,27 +185,65 @@ class WeatherUpdateService : Service(), LifecycleOwner, SavedStateRegistryOwner 
             openAppIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+
         val largeIconBitmap = getBitmapFromDrawable(this, currentWeather?.icon ?: R.drawable._3d)
-
-
-        return NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Weather in ${currentWeather?.city ?: "null"}")
-            .setContentText("${currentWeather?.temp ?: "0"}${getTempUnitSymbol(unit)} today - ${currentWeather?.description ?: " null "} - See full forecast")
-            .setSmallIcon(R.drawable.ic_alarm)
-            .setLargeIcon(largeIconBitmap)
-            .setContentIntent(openAppPendingIntent)
-            .addAction(R.drawable.ic_stop, "Stop", stopPendingIntent)
-            .addAction(R.drawable.ic_open_in_new, "See forecast", openAppPendingIntent)
-            .setAutoCancel(false)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setOngoing(true)
-            .build().apply {
-                flags = Notification.FLAG_NO_CLEAR
+        val content = if (alarm.type == Constants.TYPE_NOTIFICATION) {
+            if (currentWeather?.temp != null) {
+                "${currentWeather.temp}${getTempUnitSymbol(unit)} today - ${currentWeather.description} - See full forecast"
+            } else {
+                " Please check your connection."
             }
+        } else {
+            "Running in background"
+        }
+
+        val title = "Weather in ${currentWeather?.city ?: "..."}"
+
+        return if (alarm.type == Constants.TYPE_NOTIFICATION) {
+            NotificationCompat.Builder(this, channelId)
+                .setContentTitle(title)
+                .setContentText(content)
+                .setSmallIcon(R.drawable.ic_alarm)
+                .setLargeIcon(largeIconBitmap)
+                .setContentIntent(openAppPendingIntent)
+                .addAction(R.drawable.ic_stop, "Stop", stopPendingIntent)
+                .addAction(R.drawable.ic_open_in_new, "See forecast", openAppPendingIntent)
+                .setAutoCancel(false)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setOngoing(true)
+                .build().apply {
+                    flags = Notification.FLAG_NO_CLEAR
+                }
+        } else {
+            NotificationCompat.Builder(this, channelId)
+                .setContentText(content)
+                .setSmallIcon(R.drawable.ic_alarm)
+                .setAutoCancel(false)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setOngoing(true)
+                .build().apply {
+                    flags = Notification.FLAG_NO_CLEAR
+                }
+        }
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {   // 26+
+            val channel = NotificationChannel(
+                channelId,
+                "Weather Alerts",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description =
+                    "Get timely weather updates, alerts, and reminders based on your location."
+            }
+
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            notificationManager?.createNotificationChannel(channel)
+        }
     }
 
     private fun showOverlayDialog(currentWeather: CurrentWeather?) {
-
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
         // Window Configuration
@@ -226,7 +265,15 @@ class WeatherUpdateService : Service(), LifecycleOwner, SavedStateRegistryOwner 
             setViewTreeLifecycleOwner(this@WeatherUpdateService)
             setViewTreeSavedStateRegistryOwner(this@WeatherUpdateService)
             setContent {
-                WeatherOverlay(currentWeather) { dismiss() }
+                WeatherOverlay(currentWeather,{ dismiss() }) {
+                    val openAppIntent = Intent(this@WeatherUpdateService, MainActivity::class.java).apply {
+                        val json = Gson().toJson(currentWeather)
+                        putExtra(Constants.KEY_CURRENT_WEATHER, json)
+                        putExtra(Constants.KEY_ALARM, Gson().toJson(currentWeather))
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(openAppIntent)
+                }
             }
         }
 

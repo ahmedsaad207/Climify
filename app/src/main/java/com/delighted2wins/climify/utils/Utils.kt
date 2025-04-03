@@ -6,14 +6,14 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
-import android.net.NetworkInfo
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.delighted2wins.climify.R
 import com.delighted2wins.climify.domainmodel.ForecastWeather
+import com.delighted2wins.climify.enums.Language
 import com.delighted2wins.climify.enums.TempUnit
 import com.delighted2wins.climify.enums.WindSpeedUnit
 import com.delighted2wins.climify.utils.Constants.REQUEST_CODE_NOTIFICATIONS
@@ -30,6 +30,15 @@ fun timeStampToHumanDate(timeStamp: Long, format: String): String {
 fun Long.toFormat(format: String): String {
     val sdf = SimpleDateFormat(format, Locale.getDefault())
     return sdf.format(this)
+}
+
+fun Long.formatDuration(): String {
+    return if (this < 60) {
+        "$this seconds"
+    } else {
+        val minutes = this / 60
+        "$minutes minutes"
+    }
 }
 
 fun String.getCountryNameFromCode(): String? {
@@ -63,7 +72,7 @@ fun getDrawableFromIconCode(iconCode: String): Int {
 
 fun getBackgroundDrawableFromIconCode(iconCode: String): Int {
     return when (iconCode) {
-        "01d" -> R.drawable.clear_sky
+        "01d" -> R.drawable.sun
         "02d" -> R.drawable.clouds
         "03d" -> R.drawable.clouds
         "04d" -> R.drawable.clouds
@@ -132,7 +141,28 @@ private fun convertToArabicNumbers(number: String): String {
 
 fun Int.toLocalizedNumber(): String {
     val language = Locale.getDefault().language
-    return if (language == "ar") convertToArabicNumbers(this.toString()) else this.toString()
+    return if (language == "ar") {
+        try {
+            convertToArabicNumbers(this.toString())
+        } catch (e: Exception) {
+            return this.toString()
+        }
+    } else this.toString()
+}
+
+fun String.convertArabicToEnglishNumbers(): String {
+    val arabicDigits = "٠١٢٣٤٥٦٧٨٩"
+    val englishDigits = "0123456789"
+
+    // Check if input contains Arabic digits
+    return if (this.any { it in arabicDigits }) {
+        this.map { char ->
+            val index = arabicDigits.indexOf(char)
+            if (index != -1) englishDigits[index] else char
+        }.joinToString("")
+    } else {
+        this
+    }
 }
 
 fun Context.getTempUnitSymbol(unit: String): String {
@@ -225,6 +255,62 @@ fun checkAndRequestPostNotificationPermission(
     }
 }
 
+fun Context.checkIfLangFromAppOrSystem(lang: Language): String {
+    return if (lang == Language.DEFAULT) {
+        return this.resources.configuration.locales[0].language
+    } else {
+        lang.value
+    }
+}
+
+fun String.translateWeatherDescription(): String {
+    val map = mapOf(
+        "clear sky" to mapOf("ar" to "سماء صافية", "es" to "Cielo despejado"),
+        "few clouds" to mapOf("ar" to "سحب قليلة", "es" to "Pocas nubes"),
+        "scattered clouds" to mapOf("ar" to "سحب متناثرة", "es" to "Nubes dispersas"),
+        "broken clouds" to mapOf("ar" to "سحب متقطعة", "es" to "Nubes rotas"),
+        "shower rain" to mapOf("ar" to "مطر غزير", "es" to "Lluvia intensa"),
+        "rain" to mapOf("ar" to "مطر", "es" to "Lluvia"),
+        "thunderstorm" to mapOf("ar" to "عاصفة رعدية", "es" to "Tormenta"),
+        "snow" to mapOf("ar" to "ثلج", "es" to "Nieve"),
+        "mist" to mapOf("ar" to "ضباب", "es" to "Niebla"),
+        "light rain" to mapOf("ar" to "مطر خفيف", "es" to "Lluvia ligera"),
+        "moderate rain" to mapOf("ar" to "مطر معتدل", "es" to "Lluvia moderada"),
+        "heavy intensity rain" to mapOf("ar" to "مطر غزير", "es" to "Lluvia de intensidad fuerte"),
+        "very heavy rain" to mapOf("ar" to "مطر شديد جدًا", "es" to "Lluvia muy intensa"),
+        "extreme rain" to mapOf("ar" to "مطر شديد", "es" to "Lluvia extrema"),
+        "freezing rain" to mapOf("ar" to "مطر متجمد", "es" to "Lluvia helada"),
+        "light snow" to mapOf("ar" to "ثلج خفيف", "es" to "Nieve ligera"),
+        "heavy snow" to mapOf("ar" to "ثلج كثيف", "es" to "Nieve intensa"),
+        "sleet" to mapOf("ar" to "مطر ثلجي", "es" to "Aguanieve"),
+        "shower sleet" to mapOf("ar" to "زخات مطر ثلجي", "es" to "Chubascos de aguanieve"),
+        "light rain and snow" to mapOf("ar" to "مطر خفيف وثلج", "es" to "Lluvia ligera y nieve"),
+        "rain and snow" to mapOf("ar" to "مطر وثلج", "es" to "Lluvia y nieve"),
+        "light shower snow" to mapOf("ar" to "زخات ثلج خفيفة", "es" to "Chubascos de nieve ligera"),
+        "heavy shower snow" to mapOf(
+            "ar" to "زخات ثلج كثيفة",
+            "es" to "Chubascos de nieve intensa"
+        ),
+        "fog" to mapOf("ar" to "ضباب كثيف", "es" to "Niebla"),
+        "haze" to mapOf("ar" to "ضباب خفيف", "es" to "Bruma"),
+        "dust" to mapOf("ar" to "غبار", "es" to "Polvo"),
+        "sand" to mapOf("ar" to "رمال", "es" to "Arena"),
+        "volcanic ash" to mapOf("ar" to "رماد بركاني", "es" to "Ceniza volcánica"),
+        "squalls" to mapOf("ar" to "عواصف", "es" to "Chubascos"),
+        "tornado" to mapOf("ar" to "إعصار", "es" to "Tornado")
+    )
+
+    val language = Locale.getDefault().language
+    return map[this]?.get(language) ?: this
+}
+
+fun Context.requestOverlayPermission() {
+    val intent = Intent(
+        Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${this.packageName}")
+    )
+    this.startActivity(intent)
+//    startActivityForResult(intent, REQUEST_CODE_OVERLAY_PERMISSION)
+}
 
 
 

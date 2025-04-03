@@ -16,6 +16,9 @@ sealed class Screen {
     data object Settings : Screen()
 
     @Serializable
+    data object Splash : Screen()
+
+    @Serializable
     data class LocationSelection(val isFavorite: Boolean) : Screen()
 
     @Serializable

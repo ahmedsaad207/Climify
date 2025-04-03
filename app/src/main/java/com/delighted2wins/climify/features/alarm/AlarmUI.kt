@@ -3,9 +3,8 @@ package com.delighted2wins.climify.features.alarm
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.provider.Settings
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -15,6 +14,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.Interaction
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,13 +33,21 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.AlarmOff
+import androidx.compose.material.icons.filled.AlarmOn
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -46,9 +56,11 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -74,22 +86,25 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
 import com.delighted2wins.climify.R
-import com.delighted2wins.climify.domainmodel.Response
 import com.delighted2wins.climify.domainmodel.Alarm
 import com.delighted2wins.climify.domainmodel.CurrentWeather
+import com.delighted2wins.climify.domainmodel.Response
+import com.delighted2wins.climify.features.favorite.FavoriteLocationItem
 import com.delighted2wins.climify.features.home.components.LoadingIndicator
 import com.delighted2wins.climify.features.home.getRepo
 import com.delighted2wins.climify.utils.Constants
 import com.delighted2wins.climify.utils.checkAndRequestPostNotificationPermission
-import com.delighted2wins.climify.utils.getCountryNameFromCode
+import com.delighted2wins.climify.utils.formatDuration
+import com.delighted2wins.climify.utils.requestOverlayPermission
 import com.delighted2wins.climify.utils.toFormat
 import com.delighted2wins.climify.workers.WeatherAlarmWorker
 import com.google.gson.Gson
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
@@ -100,11 +115,24 @@ fun AlarmUI(snackBarHostState: SnackbarHostState, onSetAlarm: (() -> Unit) -> Un
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val viewModel: AlarmViewModel = viewModel(factory = AlarmViewModelFactory(getRepo(context)))
+    val message = remember { MutableSharedFlow<String>(replay = 1) }
+    val selectedOption = remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         viewModel.getAllAlarms()
     }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(message) {
+        message.collect {
+            if (it.isNotBlank()) {
+                snackBarHostState.currentSnackbarData?.dismiss()
+                snackBarHostState.showSnackbar(
+                    message = it, duration = SnackbarDuration.Short
+                )
+            }
+        }
+    }
 
     when (uiState) {
         is Response.Loading -> LoadingIndicator()
@@ -117,6 +145,10 @@ fun AlarmUI(snackBarHostState: SnackbarHostState, onSetAlarm: (() -> Unit) -> Un
             var endDate by remember { mutableLongStateOf(calendar.timeInMillis) }
             val alarms = (uiState as Response.Success).data
             val animationDuration = 500
+            val redColor = Color(0xFFFF7F7F)
+            val greenColor = Color(0xFFA5D6A7)
+            val startDurationLabelColorState = remember { mutableStateOf(greenColor) }
+            val endDurationLabelColorState = remember { mutableStateOf(greenColor) }
 
             onSetAlarm {
                 if (startDate <= System.currentTimeMillis() || endDate <= startDate || endDate <= System.currentTimeMillis()) {
@@ -127,26 +159,47 @@ fun AlarmUI(snackBarHostState: SnackbarHostState, onSetAlarm: (() -> Unit) -> Un
                             duration = SnackbarDuration.Short
                         )
                     }
-                } else {
-                    checkAndRequestPostNotificationPermission(context) {
-                        val durationInMillis = (endDate - startDate)
-                        val alarm = Alarm(
-                            System.currentTimeMillis().toString(),
-                            startDate,
-                            durationInMillis,
-                            Constants.TYPE_NOTIFICATION
-                        )
-                        scheduleAlarmWork(context, alarm)
-                        viewModel.insertAlarm(alarm)
 
-                        scope.launch {
-                            snackBarHostState.currentSnackbarData?.dismiss()
-                            snackBarHostState.showSnackbar(
-                                message = "Alarm Created successfully",
-                                duration = SnackbarDuration.Short
-                            )
-                        }
+                    if (startDate <= System.currentTimeMillis()) {
+                        startDurationLabelColorState.value = redColor
+                    } else {
+                        startDurationLabelColorState.value = greenColor
                     }
+
+                    if (endDate <= System.currentTimeMillis() || endDate <= startDate) {
+                        endDurationLabelColorState.value = redColor
+                    } else {
+                        endDurationLabelColorState.value = greenColor
+                    }
+                } else if (selectedOption.value.isBlank()) {
+                    scope.launch {
+                        snackBarHostState.currentSnackbarData?.dismiss()
+                        snackBarHostState.showSnackbar(
+                            message = context.getString(R.string.please_select_type_of_alarm),
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                } else {
+
+                    val durationInMillis = (endDate - startDate)
+                    val alarm = Alarm(
+                        System.currentTimeMillis().toString(),
+                        startDate,
+                        durationInMillis,
+                        Constants.TYPE_NOTIFICATION
+                    )
+                    alarm.type = selectedOption.value
+                    scheduleAlarmWork(context, alarm)
+                    viewModel.insertAlarm(alarm)
+
+                    scope.launch {
+                        snackBarHostState.currentSnackbarData?.dismiss()
+                        snackBarHostState.showSnackbar(
+                            message = context.getString(R.string.alarm_created_successfully),
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+
                 }
             }
 
@@ -154,34 +207,32 @@ fun AlarmUI(snackBarHostState: SnackbarHostState, onSetAlarm: (() -> Unit) -> Un
                 item {
                     Spacer(Modifier.height(24.dp))
                     Text(
-                        text = "Alarm",
+                        text = stringResource(R.string.alarm),
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFFB0B0B0), // A softer gray for readability
+                        color = Color(0xFFB0B0B0),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 24.dp, vertical = 16.dp)
                             .background(
                                 brush = Brush.verticalGradient(
                                     colors = listOf(
-                                        Color(0xFF2A2B26), // Lighter grayish-green, adds softness
-                                        Color(0xFF20211D)  // Slightly lighter deep gray
+                                        Color(0xFF2A2B26),
+                                        Color(0xFF20211D)
                                     )
-                                ),
-                                shape = RoundedCornerShape(12.dp)
+                                ), shape = RoundedCornerShape(12.dp)
                             )
-                            .padding(vertical = 12.dp) // Inner padding for better aesthetics
+                            .padding(vertical = 12.dp)
                             .shadow(
-                                4.dp,
-                                shape = RoundedCornerShape(12.dp)
-                            ) // Subtle shadow for depth
-                            .wrapContentSize(Alignment.Center) // Centers text in the background
+                                4.dp, shape = RoundedCornerShape(12.dp)
+                            )
+                            .wrapContentSize(Alignment.Center)
                     )
                 }
 
                 item {
                     Text(
-                        text = "Set your Alarm",
+                        text = stringResource(R.string.set_your_alarm),
                         fontSize = 24.sp,
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
@@ -192,99 +243,156 @@ fun AlarmUI(snackBarHostState: SnackbarHostState, onSetAlarm: (() -> Unit) -> Un
                 }
 
                 item {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Start Duration", color = Color.White)
-                            Spacer(Modifier.width(24.dp))
-                            Text(
-                                "${
-                                    startDate.toFormat("EEE, dd MMM")
-                                }\n${startDate.toFormat("h:mm a")}", color = Color.White
+                    val onStartDurationClicked = remember {
+                        object : MutableInteractionSource {
+                            override val interactions = MutableSharedFlow<Interaction>(
+                                extraBufferCapacity = 16,
+                                onBufferOverflow = BufferOverflow.DROP_OLDEST,
                             )
-                            Spacer(Modifier.width(24.dp))
-                            Button(onClick = {
-                                getDateTime(context) { startDurationInMillis ->
-                                    startDate = startDurationInMillis
-                                }
-                            }) { Text("Set", color = Color.White) }
-                        }
-                        Spacer(Modifier.height(24.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("End Duration", color = Color.White)
-                            Spacer(Modifier.width(24.dp))
-                            Text(
-                                "${
-                                    endDate.toFormat("EEE, dd MMM")
-                                }\n${endDate.toFormat("h:mm a")}", color = Color.White
-                            )
-                            Spacer(Modifier.width(24.dp))
-                            Button(onClick = {
-                                getDateTime(context) { endDurationInMillis ->
 
-
-                                    endDate = endDurationInMillis
+                            override suspend fun emit(interaction: Interaction) {
+                                if (interaction is PressInteraction.Release) {
+                                    getDateTime(context) { startDurationInMillis ->
+                                        startDate = startDurationInMillis
+                                    }
                                 }
-                            }) { Text("Set", color = Color.White) }
-                        }
-
-                        /*Button(
-                            onClick = {
-                                if (!Settings.canDrawOverlays(context)) {
-                                    requestOverlayPermission(context)
-        //                        requestLocationPermissions()
-                                } else {
-                                    scheduleAlarmWork(context)
-                                }
+                                interactions.emit(interaction)
                             }
+
+                            override fun tryEmit(interaction: Interaction): Boolean {
+                                return interactions.tryEmit(interaction)
+                            }
+                        }
+                    }
+                    val onEndDurationClicked = remember {
+                        object : MutableInteractionSource {
+                            override val interactions = MutableSharedFlow<Interaction>(
+                                extraBufferCapacity = 16,
+                                onBufferOverflow = BufferOverflow.DROP_OLDEST,
+                            )
+
+                            override suspend fun emit(interaction: Interaction) {
+                                if (interaction is PressInteraction.Release) {
+                                    getDateTime(context) { endDurationInMillis ->
+                                        endDate = endDurationInMillis
+                                    }
+                                }
+                                interactions.emit(interaction)
+                            }
+
+                            override fun tryEmit(interaction: Interaction): Boolean {
+                                return interactions.tryEmit(interaction)
+                            }
+                        }
+                    }
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        shape = RoundedCornerShape(24.dp),
+                        elevation = CardDefaults.cardElevation(6.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(Color(0xFF2A2B26), Color(0xFF1E1F1C))
+                                    ), shape = RoundedCornerShape(24.dp)
+                                )
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
                         ) {
-                            Text("Run Alarm")
-                        }*/
-//                        Button(onClick = {
-//                            if (startDate <= System.currentTimeMillis() || endDate <= startDate || endDate <= System.currentTimeMillis()) {
-//                                scope.launch {
-//                                    snackBarHostState.currentSnackbarData?.dismiss()
-//                                    snackBarHostState.showSnackbar(
-//                                        message = "Please Select time in Future",
-//                                        duration = SnackbarDuration.Short
-//                                    )
-//                                }
-//                            } else {
-//                                val durationInMillis = (endDate - startDate)
-//                                val alarm = Alarm(
-//                                    System.currentTimeMillis().toString(),
-//                                    startDate,
-//                                    durationInMillis,
-//                                    Constants.TYPE_NOTIFICATION
-//                                )
-//                                scheduleAlarmWork(context, alarm)
-//                                viewModel.insertAlarm(alarm)
-//
-//                                scope.launch {
-//                                    snackBarHostState.currentSnackbarData?.dismiss()
-//                                    snackBarHostState.showSnackbar(
-//                                        message = "Alarm Created successfully",
-//                                        duration = SnackbarDuration.Short
-//                                    )
-//                                }
-//                            }
-//                        }) { Text("Add") }
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    OutlinedTextField(
+                                        value = "${
+                                            startDate.toFormat("EEE, dd MMM")
+                                        }\n${startDate.toFormat("h:mm a")}",
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        label = { Text(stringResource(R.string.start_duration)) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Default.AlarmOn,
+                                                contentDescription = null,
+                                                tint = Color.White,
+                                                modifier = Modifier.padding(end = 8.dp)
+                                            )
+                                        },
+                                        interactionSource = onStartDurationClicked,
+                                        colors = TextFieldDefaults.colors(
+                                            unfocusedTextColor = Color.White,
+                                            focusedTextColor = Color.White,
+                                            unfocusedIndicatorColor = Color.DarkGray,
+                                            focusedIndicatorColor = Color.Gray,
+                                            cursorColor = Color.White,
+                                            unfocusedLabelColor = startDurationLabelColorState.value,
+                                            focusedLabelColor = startDurationLabelColorState.value,
+                                            focusedContainerColor = colorResource(R.color.deep_gray),
+                                            unfocusedContainerColor = colorResource(R.color.deep_gray)
+                                        ),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 8.dp)
+                                    )
+                                }
+
+                                Spacer(Modifier.height(8.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    OutlinedTextField(
+                                        value = "${
+                                            endDate.toFormat("EEE, dd MMM")
+                                        }\n${endDate.toFormat("h:mm a")}",
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        label = { Text(stringResource(R.string.end_duration)) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Default.AlarmOff,
+                                                contentDescription = null,
+                                                tint = Color.White,
+                                                modifier = Modifier.padding(end = 8.dp)
+                                            )
+                                        },
+                                        interactionSource = onEndDurationClicked,
+                                        colors = TextFieldDefaults.colors(
+                                            unfocusedTextColor = Color.White,
+                                            focusedTextColor = Color.White,
+                                            unfocusedIndicatorColor = Color.DarkGray,
+                                            focusedIndicatorColor = Color.Gray,
+                                            cursorColor = Color.White,
+                                            unfocusedLabelColor = endDurationLabelColorState.value,
+                                            focusedLabelColor = endDurationLabelColorState.value,
+                                            focusedContainerColor = colorResource(R.color.deep_gray),
+                                            unfocusedContainerColor = colorResource(R.color.deep_gray)
+                                        ),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 8.dp)
+                                    )
+                                }
+                                RadioButtonGroup(selectedOption)
+                            }
+                        }
+
                     }
                 }
 
                 item {
                     Text(
-                        text = "Alarm",
+                        text = stringResource(R.string.alarm),
                         fontSize = 24.sp,
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
@@ -294,65 +402,53 @@ fun AlarmUI(snackBarHostState: SnackbarHostState, onSetAlarm: (() -> Unit) -> Un
                     )
                 }
                 if (alarms.isNotEmpty()) {
-//                    items(alarms) {
-//                        Text(
-//                            it.tag,
-//                            color = Color.White,
-//                            modifier = Modifier.fillMaxWidth(),
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 24.sp
-//                        )
-//                    }
-                    // list
-                    items(
-                        items = alarms,
-                        key = { it.tag }
-                    ) { alarm ->
-                        val dismissState = rememberSwipeToDismissBoxState(
-                            confirmValueChange = { dismissValue ->
+
+                    items(items = alarms, key = { it.tag }) { alarm ->
+
+                        if (alarm.startDuration < System.currentTimeMillis()) {
+                            alarm.isChecked = false
+                            viewModel.insertAlarm(alarm)
+                        }
+
+                        val dismissState =
+                            rememberSwipeToDismissBoxState(confirmValueChange = { dismissValue ->
                                 if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
                                     WorkManager.getInstance(context).cancelAllWorkByTag(alarm.tag)
-                                    viewModel.deleteAlarm(alarm)
-
-                                    scope.launch {
-                                        snackBarHostState.currentSnackbarData?.dismiss()
-                                        val result = snackBarHostState.showSnackbar(
-                                            message = "Alarm deleted successfully",
-                                            actionLabel = "Undo",
-                                            duration = SnackbarDuration.Short
-                                        )
-                                        if (result == SnackbarResult.ActionPerformed) {
-                                            viewModel.insertAlarm(alarm)
-                                            scheduleAlarmWork(
-                                                context,
-                                                alarm
+                                    if (alarm.startDuration > System.currentTimeMillis()) {
+                                        viewModel.deleteAlarm(alarm)
+                                        scope.launch {
+                                            snackBarHostState.currentSnackbarData?.dismiss()
+                                            val result = snackBarHostState.showSnackbar(
+                                                message = context.getString(R.string.alarm_deleted_successfully),
+                                                actionLabel = "Undo",
+                                                duration = SnackbarDuration.Short
                                             )
+                                            if (result == SnackbarResult.ActionPerformed) {
+                                                viewModel.insertAlarm(alarm)
+                                                scheduleAlarmWork(
+                                                    context, alarm
+                                                )
+                                            }
                                         }
                                     }
                                 }
                                 true
-                            }
-                        )
+                            })
 
                         AnimatedVisibility(
                             visible = dismissState.currentValue != SwipeToDismissBoxValue.EndToStart,
                             exit = shrinkVertically(
-                                shrinkTowards = Alignment.Top,
-                                animationSpec = tween(
-                                    durationMillis = animationDuration,
-                                    easing = FastOutSlowInEasing
+                                shrinkTowards = Alignment.Top, animationSpec = tween(
+                                    durationMillis = animationDuration, easing = FastOutSlowInEasing
                                 )
                             ) + fadeOut(animationSpec = tween(durationMillis = animationDuration)),
                             enter = slideInVertically(
-                                initialOffsetY = { it / 2 },
-                                animationSpec = tween(
-                                    durationMillis = 500,
-                                    easing = LinearOutSlowInEasing
+                                initialOffsetY = { it / 2 }, animationSpec = tween(
+                                    durationMillis = 500, easing = LinearOutSlowInEasing
                                 )
                             ) + fadeIn(animationSpec = tween(durationMillis = 300))
                         ) {
-                            SwipeToDismissBox(
-                                state = dismissState,
+                            SwipeToDismissBox(state = dismissState,
                                 enableDismissFromStartToEnd = false,
                                 backgroundContent = {
                                     Box(
@@ -363,25 +459,25 @@ fun AlarmUI(snackBarHostState: SnackbarHostState, onSetAlarm: (() -> Unit) -> Un
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Delete,
-                                            contentDescription = "Delete",
+                                            contentDescription = stringResource(R.string.delete),
                                             tint = Color.White
                                         )
                                     }
-                                }
-                            ) {
-//                                Text(
-//                                    alarm.tag,
-//                                    color = Color.White,
-//                                    modifier = Modifier.fillMaxWidth(),
-//                                    textAlign = TextAlign.Center,
-//                                    fontSize = 24.sp
-//                                )
+                                }) {
+
                                 ReminderItem(
-                                    "Wednesday, April 15 2020",
-                                    "04:00",
-                                    "duration: 2 minutes",
-                                    true
-                                ) {}
+                                    message, alarm
+                                ) {
+                                    alarm.isChecked = it
+                                    viewModel.insertAlarm(alarm)
+
+                                    if (it) {
+                                        scheduleAlarmWork(context, alarm)
+                                    } else {
+                                        WorkManager.getInstance(context)
+                                            .cancelAllWorkByTag(alarm.tag)
+                                    }
+                                }
                             }
                         }
                     }
@@ -389,7 +485,7 @@ fun AlarmUI(snackBarHostState: SnackbarHostState, onSetAlarm: (() -> Unit) -> Un
                     item {
                         Spacer(modifier = Modifier.height(200.dp))
                     }
-                } else { // TODO add lottie
+                } else {
                     item {
                         Column(
                             modifier = Modifier.fillMaxSize(),
@@ -398,22 +494,22 @@ fun AlarmUI(snackBarHostState: SnackbarHostState, onSetAlarm: (() -> Unit) -> Un
                         ) {
                             val composition by rememberLottieComposition(
                                 LottieCompositionSpec.RawRes(
-                                    R.raw.empty2
+                                    R.raw.sleeping
                                 )
                             )
                             val progress by animateLottieCompositionAsState(
                                 composition = composition,
-                                iterations = 1
+                                iterations = LottieConstants.IterateForever
                             )
                             LottieAnimation(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(300.dp),
+                                    .height(200.dp),
                                 composition = composition,
                                 progress = { progress },
                             )
                             Text(
-                                text = stringResource(R.string.no_favorite_locations_found_add_some_to_get_started),
+                                text = stringResource(R.string.no_alarms_found),
                                 fontSize = 18.sp,
                                 color = colorResource(R.color.neutral_gray),
                                 textAlign = TextAlign.Center,
@@ -423,164 +519,13 @@ fun AlarmUI(snackBarHostState: SnackbarHostState, onSetAlarm: (() -> Unit) -> Un
                     }
                 }
             }
-            /*LazyColumn {
-                item {
-                    Spacer(Modifier.height(24.dp))
-                    Text(
-                        text = "Alarm",
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFFB0B0B0), // A softer gray for readability
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 16.dp)
-                            .background(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color(0xFF2A2B26), // Lighter grayish-green, adds softness
-                                        Color(0xFF20211D)  // Slightly lighter deep gray
-                                    )
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            .padding(vertical = 12.dp) // Inner padding for better aesthetics
-                            .shadow(4.dp, shape = RoundedCornerShape(12.dp)) // Subtle shadow for depth
-                            .wrapContentSize(Alignment.Center) // Centers text in the background
-                    )
-                }
-
-                item {
-                    Text(
-                        text = "Set your Alarm",
-                        fontSize = 24.sp,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 8.dp)
-                    )
-                }
-
-                item {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Start Duration", color = Color.White)
-                            Spacer(Modifier.width(24.dp))
-                            Text("Sun, 30 Mar\n7:02 PM", color = Color.White)
-                            Spacer(Modifier.width(24.dp))
-                            Button(onClick = {
-                                getDateTime(context) {startDurationInMillis ->
-                                    startDate = startDurationInMillis
-                                }
-                            }) { Text("Set", color = Color.White) }
-                        }
-                        Spacer(Modifier.height(24.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("End Duration", color = Color.White)
-                            Spacer(Modifier.width(24.dp))
-                            Text("Sun, 30 Mar\n7:03 PM", color = Color.White)
-                            Spacer(Modifier.width(24.dp))
-                            Button(onClick = {
-                                getDateTime(context) {endDurationInMillis ->
-                                    endDate = endDurationInMillis
-                                }
-                            }) { Text("Set", color = Color.White) }
-                        }
-                        */
-            /*getDateTime { startMillis, endMillis ->
-                                val durationInSeconds = (endMillis - startMillis)
-
-                                val alarm = Alarm(
-                                    System.currentTimeMillis().toString(),
-                                    startMillis,
-                                    durationInSeconds,
-                                    Constants.TYPE_NOTIFICATION
-                                )
-                                scheduleAlarmWork(context, alarm)
-                                viewModel.insertAlarm(alarm)
-                            }*//*
-                            *//*Button(
-                                onClick = {
-                                    if (!Settings.canDrawOverlays(context)) {
-                                        requestOverlayPermission(context)
-            //                        requestLocationPermissions()
-                                    } else {
-                                        scheduleAlarmWork(context)
-                                    }
-                                }
-                            ) {
-                                Text("Run Alarm")
-                            }*/
-            /*
-                            Button(onClick = {
-                                val durationInMillis = (endDate!! - startDate!!)
-
-                                val alarm = Alarm(
-                                    System.currentTimeMillis().toString(),
-                                    startDate!!,
-                                    durationInMillis,
-                                    Constants.TYPE_NOTIFICATION
-                                )
-                                scheduleAlarmWork(context, alarm)
-                                viewModel.insertAlarm(alarm)
-                            }) { Text("Add") }
-                        }
-                    }
-
-                    item {
-                        Text(
-                            text = "Alarm",
-                            fontSize = 24.sp,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 24.dp, vertical = 8.dp)
-                        )
-                    }
-
-                    item {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            LottieAnimation(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(300.dp),
-                                composition = composition,
-                                progress = { progress },
-                            )
-                            Text(
-                                text = stringResource(R.string.no_favorite_locations_found_add_some_to_get_started),
-                                fontSize = 18.sp,
-                                color = colorResource(R.color.neutral_gray),
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 24.dp)
-                            )
-                        }
-                    }
-                }*/
         }
 
-        is Response.Failure -> { //TODO lottie,
+        is Response.Failure -> {
             val error = (uiState as Response.Failure).error
             val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.cloud_error))
             val progress by animateLottieCompositionAsState(
-                composition = composition,
-                iterations = 1
+                composition = composition, iterations = 1
             )
             Column {
                 Spacer(Modifier.height(24.dp))
@@ -620,108 +565,60 @@ fun AlarmUI(snackBarHostState: SnackbarHostState, onSetAlarm: (() -> Unit) -> Un
     }
 }
 
-@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun WeatherOverlay(
-    currentWeather: CurrentWeather?,
-    onDismiss: () -> Unit
+    currentWeather: CurrentWeather?, onDismiss: () -> Unit, onOpen: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .wrapContentSize()
-            .background(Color.Black.copy(alpha = 0f)),
-        contentAlignment = Alignment.Center
-    ) {
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.padding(0.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+    currentWeather?.let {
+        Column {
+            FavoriteLocationItem(currentWeather, {}, currentWeather.unit)
+
+            Row(
+                modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Text(text = "Reminder", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "" +
-                            "country: ${currentWeather?.country?.getCountryNameFromCode() ?: "country is null"}, " +
-                            "\ncity: ${currentWeather?.city}" +
-                            "\ndescription: ${currentWeather?.description}"
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { onDismiss() }) {
-                    Text("Close")
+                Button(
+                    onClick = { onDismiss() },
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(Color(0xFFB71C1C)),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(R.string.close)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(stringResource(R.string.cancel))
                 }
-                GlideImage(
-                    modifier = Modifier.size(48.dp),
-                    model = currentWeather?.icon,
-                    contentDescription = null
-                )
+
+                Button(
+                    onClick = { onOpen() },
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(Color(0xFF388E3C)),
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                        contentDescription = stringResource(R.string.open)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(stringResource(R.string.open))
+                }
             }
         }
     }
 }
 
 fun scheduleAlarmWork(
-    context: Context,
-    alarm: Alarm
+    context: Context, alarm: Alarm
 ) {
     val initial = calculateInitialDelay(alarm.startDuration)
-    val workRequest = OneTimeWorkRequestBuilder<WeatherAlarmWorker>()
-        .addTag(alarm.tag)
-        .setInputData(
+    val workRequest =
+        OneTimeWorkRequestBuilder<WeatherAlarmWorker>().addTag(alarm.tag).setInputData(
             workDataOf(
                 Constants.KEY_ALARM to Gson().toJson(alarm)
             )
-        )
-        .setInitialDelay(initial, TimeUnit.SECONDS)
-        .build()
+        ).setInitialDelay(initial, TimeUnit.SECONDS).build()
 
     WorkManager.getInstance(context).enqueue(workRequest)
 }
-
-fun requestOverlayPermission(context: Context) {
-    val intent = Intent(
-        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-        Uri.parse("package:${context.packageName}")
-    )
-    context.startActivity(intent)
-//    startActivityForResult(intent, REQUEST_CODE_OVERLAY_PERMISSION)
-}
-
-/*private fun requestLocationPermissions() {
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // 34+
-        val permissions = arrayOf(
-            android.Manifest.permission.ACCESS_FINE_LOCATION,
-            android.Manifest.permission.ACCESS_COARSE_LOCATION
-//                android.Manifest.permission.FOREGROUND_SERVICE_LOCATION
-        )
-
-        if (permissions.any {
-                checkSelfPermission(
-                    this,
-                    it
-                ) != PackageManager.PERMISSION_GRANTED
-            }) {
-            requestPermissions(this, permissions, 200)
-        }
-    } else {
-        val permissions = arrayOf(
-            android.Manifest.permission.ACCESS_FINE_LOCATION,
-            android.Manifest.permission.ACCESS_COARSE_LOCATION,
-        )
-
-        if (permissions.any {
-                checkSelfPermission(
-                    this,
-                    it
-                ) != PackageManager.PERMISSION_GRANTED
-            }) {
-            requestPermissions(this, permissions, 200)
-        }
-    }
-}*/
 
 fun getDateTime(context: Context, onDateTimeSelected: (Long) -> Unit) {
 
@@ -731,27 +628,19 @@ fun getDateTime(context: Context, onDateTimeSelected: (Long) -> Unit) {
     val day = calendar.get(Calendar.DAY_OF_MONTH)
 
     val datePicker = DatePickerDialog(
-        context,
-        { _, y, m, d ->
+        context, { _, y, m, d ->
             calendar.set(y, m, d)
 
             TimePickerDialog(
-                context,
-                { _, hour, minute ->
+                context, { _, hour, minute ->
                     calendar.set(Calendar.HOUR_OF_DAY, hour)
                     calendar.set(Calendar.MINUTE, minute)
                     calendar.set(Calendar.SECOND, 0)
                     onDateTimeSelected(calendar.timeInMillis)
-                },
-                calendar.get(Calendar.HOUR_OF_DAY),
-                calendar.get(Calendar.MINUTE) + 1,
-                false
+                }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE) + 1, false
             ).show()
 
-        },
-        year,
-        month,
-        day
+        }, year, month, day
     )
     datePicker.datePicker.minDate = System.currentTimeMillis()
     datePicker.show()
@@ -760,109 +649,25 @@ fun getDateTime(context: Context, onDateTimeSelected: (Long) -> Unit) {
 fun calculateInitialDelay(selectedTimeInMillis: Long): Long {
     val currentTimeMillis = System.currentTimeMillis()
     return if (selectedTimeInMillis > currentTimeMillis) {
-        (selectedTimeInMillis - currentTimeMillis) / 1000 // Convert to seconds
+        (selectedTimeInMillis - currentTimeMillis) / 1000
     } else {
         0
     }
 }
 
-// black one (best but dark)
-/*@Composable
-fun ReminderItem(
-    date: String,
-    time: String,
-    description: String,
-    isEnabled: Boolean,
-    onToggle: (Boolean) -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(6.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-    ) {
-        Box(
-            modifier = Modifier
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(Color(0xFF1E1F1C), Color(0xFF151513)) // Dark theme gradient
-                    ),
-                    shape = RoundedCornerShape(24.dp)
-                )
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        text = date,
-                        fontSize = 14.sp,
-                        color = Color(0xFF808080), // Soft gray for subtle contrast
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = time,
-                            fontSize = 28.sp,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "PM",
-                            fontSize = 18.sp,
-                            color = Color.White.copy(alpha = 0.8f),
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Icon(
-                            imageVector = Icons.Outlined.WbSunny,
-                            contentDescription = "Day Icon",
-                            tint = Color(0xFFB0B0B0) // Lighter gray accent
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = description,
-                        fontSize = 16.sp,
-                        color = Color.White.copy(alpha = 0.8f),
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
-                Switch(
-                    checked = isEnabled,
-                    onCheckedChange = onToggle,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color(0xFF808080),
-                        checkedTrackColor = Color(0xFF5A5A5A),
-                        uncheckedThumbColor = Color(0xFF404040),
-                        uncheckedTrackColor = Color(0xFF2A2B26)
-                    )
-                )
-            }
-        }
-    }
-}*/
-
-// gray like favorite (accepted)
 @Composable
 fun ReminderItem(
-    date: String,
-    time: String,
-    description: String,
-    isEnabled: Boolean,
-    onToggle: (Boolean) -> Unit
+    message: MutableSharedFlow<String>, alarm: Alarm, onToggle: (Boolean) -> Unit
 ) {
-    var isChecked by remember { mutableStateOf(isEnabled) }
+    val context = LocalContext.current
+
+    val date = alarm.startDuration.toFormat("EEEE, MMMM d")
+    val time = alarm.startDuration.toFormat("HH:mm")
+    val pmAm = alarm.startDuration.toFormat("a")
+    val isChecked = alarm.isChecked
+    val duration = "${alarm.type} last for ${(alarm.endDuration / 1000).formatDuration()}"
+    Log.i("TAG", "ReminderItem: duration = $duration")
+    var isCheckedState by remember { mutableStateOf(isChecked) }
 
     Card(
         modifier = Modifier
@@ -876,9 +681,8 @@ fun ReminderItem(
             modifier = Modifier
                 .background(
                     brush = Brush.verticalGradient(
-                        colors = listOf(Color(0xFF2A2B26), Color(0xFF1E1F1C)) // Matching gradient
-                    ),
-                    shape = RoundedCornerShape(24.dp)
+                        colors = listOf(Color(0xFF2A2B26), Color(0xFF1E1F1C))
+                    ), shape = RoundedCornerShape(24.dp)
                 )
                 .padding(16.dp)
         ) {
@@ -893,7 +697,7 @@ fun ReminderItem(
                     Text(
                         text = date,
                         fontSize = 14.sp,
-                        color = Color(0xFF808080), // Soft gray
+                        color = Color(0xFF808080),
                         fontWeight = FontWeight.Medium
                     )
                     Spacer(modifier = Modifier.height(4.dp))
@@ -906,54 +710,83 @@ fun ReminderItem(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "PM",
+                            text = pmAm,
                             fontSize = 18.sp,
                             color = Color.White.copy(alpha = 0.8f),
                             fontWeight = FontWeight.Medium
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Icon(
-//                            imageVector = Icons.Outlined.WbSunny,
-                            imageVector = Icons.Outlined.DarkMode,
-                            contentDescription = "Day Icon",
-                            tint = Color(0xFF2196F3) // Lighter gray accent
-//                            tint = Color(0xFFFFC107) // for sun
+                            imageVector = if (pmAm.equals(
+                                    "PM", ignoreCase = true
+                                )
+                            ) Icons.Outlined.WbSunny
+                            else Icons.Outlined.DarkMode,
+                            tint = if (pmAm.equals("PM", ignoreCase = true)) Color(0xFFFFC107)
+                            else Color(0xFF2196F3),
+                            contentDescription = null
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = description,
+                        text = duration,
                         fontSize = 16.sp,
                         color = Color.White.copy(alpha = 0.8f),
                         fontWeight = FontWeight.Medium
                     )
                 }
 
-                Switch(
-                    checked = isChecked,
-                    onCheckedChange = {
+                Switch(checked = isCheckedState, onCheckedChange = {
+                    if (alarm.startDuration > System.currentTimeMillis()) {
                         onToggle(it)
-                        isChecked = it
-                    },
-                    thumbContent = if (isChecked) {
-                        {
-                            Icon(
-                                imageVector = Icons.Filled.Check,
-                                contentDescription = null,
-                                modifier = Modifier.size(SwitchDefaults.IconSize),
-                            )
-                        }
+                        isCheckedState = it
                     } else {
-                        null
-                    },
-                    enabled = true
-                )
+                        message.tryEmit(context.getString(R.string.you_can_t_enable_past_alarm))
+                    }
+                }, thumbContent = if (isChecked) {
+                    {
+                        Icon(
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(SwitchDefaults.IconSize),
+                        )
+                    }
+                } else {
+                    null
+                }, enabled = true)
             }
         }
     }
 }
 
 
+@Composable
+fun RadioButtonGroup(selectedOption: MutableState<String>) {
+    val context = LocalContext.current
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            RadioButton(selected = selectedOption.value == Constants.TYPE_OVERLAY, onClick = {
+                if (!Settings.canDrawOverlays(context)) {
+                    context.requestOverlayPermission()
+                } else {
+                    selectedOption.value = Constants.TYPE_OVERLAY
+                }
+            })
+            Text(stringResource(R.string.alarm_popup), color = Color.White)
+        }
 
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            RadioButton(selected = selectedOption.value == Constants.TYPE_NOTIFICATION, onClick = {
+                checkAndRequestPostNotificationPermission(context) {
+                    selectedOption.value = Constants.TYPE_NOTIFICATION
+                }
+            })
+            Text(stringResource(R.string.notification), color = Color.White)
+        }
+    }
+}
 
 

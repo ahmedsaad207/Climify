@@ -2,13 +2,12 @@ package com.delighted2wins.climify.features.alarm
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.delighted2wins.climify.domainmodel.Response
 import com.delighted2wins.climify.data.repo.WeatherRepository
 import com.delighted2wins.climify.domainmodel.Alarm
+import com.delighted2wins.climify.domainmodel.Response
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class AlarmViewModel(private val repo: WeatherRepository) : ViewModel() {
@@ -27,9 +26,6 @@ class AlarmViewModel(private val repo: WeatherRepository) : ViewModel() {
         try {
             repo.getAllAlarms()
                 .catch { e -> _uiState.emit(Response.Failure("Error: ${e.message}")) }
-                .map { list ->
-                    list.filter { it.startDuration > System.currentTimeMillis() }
-                }
                 .collect {
                     _uiState.emit(Response.Success(it))
                 }

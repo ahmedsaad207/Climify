@@ -1,5 +1,6 @@
 package com.delighted2wins.climify.features.favorite
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -64,17 +65,19 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.delighted2wins.climify.R
-import com.delighted2wins.climify.domainmodel.Response
 import com.delighted2wins.climify.domainmodel.CurrentWeather
+import com.delighted2wins.climify.domainmodel.Response
 import com.delighted2wins.climify.enums.TempUnit
 import com.delighted2wins.climify.features.home.components.LoadingIndicator
 import com.delighted2wins.climify.features.home.getRepo
 import com.delighted2wins.climify.utils.Constants
+import com.delighted2wins.climify.utils.convertArabicToEnglishNumbers
 import com.delighted2wins.climify.utils.convertTemp
 import com.delighted2wins.climify.utils.getCountryNameFromCode
 import com.delighted2wins.climify.utils.getTempUnitSymbol
 import com.delighted2wins.climify.utils.timeStampToHumanDate
 import com.delighted2wins.climify.utils.toLocalizedNumber
+import com.delighted2wins.climify.utils.translateWeatherDescription
 import kotlinx.coroutines.launch
 
 @Composable
@@ -118,12 +121,12 @@ fun FavoriteUI(
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
-                    // header
+
                     item {
                         Header()
                     }
 
-                    // list
+
                     items(
                         items = weathersState.value,
                         key = { it.id }
@@ -136,8 +139,8 @@ fun FavoriteUI(
                                     scope.launch {
                                         snackBarHostState.currentSnackbarData?.dismiss()
                                         val result = snackBarHostState.showSnackbar(
-                                            message = "Location deleted from favorite",
-                                            actionLabel = "Undo",
+                                            message = context.getString(R.string.location_deleted_from_favorite),
+                                            actionLabel = context.getString(R.string.undo),
                                             duration = SnackbarDuration.Short
                                         )
                                         if (result == SnackbarResult.ActionPerformed) {
@@ -178,7 +181,7 @@ fun FavoriteUI(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Delete,
-                                            contentDescription = "Delete",
+                                            contentDescription = stringResource(R.string.delete),
                                             tint = Color.White
                                         )
                                     }
@@ -198,8 +201,9 @@ fun FavoriteUI(
                     }
 
                 }
-            } else {
-                val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.empty2))
+            }
+            else {
+                val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.no_fav_location))
                 val progress by animateLottieCompositionAsState(
                     composition = composition,
                     iterations = 1
@@ -216,10 +220,11 @@ fun FavoriteUI(
                         LottieAnimation(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(250.dp),
+                                .height(200.dp),
                             composition = composition,
                             progress = { progress },
                         )
+                        Spacer(Modifier.height(16.dp))
                         Text(
                             text = stringResource(R.string.no_favorite_locations_found_add_some_to_get_started),
                             fontSize = 18.sp,
@@ -283,18 +288,18 @@ private fun Header() {
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xFF2A2B26), // Lighter grayish-green, adds softness
-                            Color(0xFF20211D)  // Slightly lighter deep gray
+                            Color(0xFF2A2B26),
+                            Color(0xFF20211D)
                         )
                     ),
                     shape = RoundedCornerShape(12.dp)
                 )
-                .padding(vertical = 12.dp) // Inner padding for better aesthetics
+                .padding(vertical = 12.dp)
                 .shadow(
                     4.dp,
                     shape = RoundedCornerShape(12.dp)
-                ) // Subtle shadow for depth
-                .wrapContentSize(Alignment.Center) // Centers text in the background
+                )
+                .wrapContentSize(Alignment.Center)
         )
     }
 }
@@ -302,110 +307,15 @@ private fun Header() {
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-        /*fun FavoriteLocationItem(
-            weather: CurrentWeather,
-            onNavigateToWeatherDetails: (Int) -> Unit,
-            appUnit: String
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onNavigateToWeatherDetails(weather.id) }
-                    .padding(horizontal = 24.dp, vertical = 8.dp)
-                    .background(colorResource(R.color.grayish_green), shape = RoundedCornerShape(32.dp))
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                val unit = LocalContext.current.getTempUnitSymbol(appUnit)
-                val temp =
-                    weather.unit.convertTemp(weather.temp.toDouble(), appUnit).toInt().toLocalizedNumber()
-
-                // country, city and description, time
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = weather.country.getCountryNameFromCode() ?: "",
-                        fontSize = 16.sp,
-                        color = colorResource(R.color.neutral_gray),
-                        fontWeight = FontWeight.Normal,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-
-                    Text(
-                        text = weather.city,
-                        fontSize = 24.sp,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Text(
-                        text = weather.description,
-                        fontSize = 18.sp,
-                        color = Color.White,
-                        fontWeight = FontWeight.Normal,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-
-                    Text(
-                        text = stringResource(
-                            R.string.last_update_with_date, timeStampToHumanDate(
-                                weather.dt.toLong(),
-                                stringResource(R.string.day_abbr_month_hour_minute_am_pm)
-                            )
-                        ),
-                        fontSize = 13.sp,
-                        color = colorResource(R.color.neutral_gray),
-                        fontWeight = FontWeight.Normal,
-                        modifier = Modifier.padding(bottom = 8.dp, top = 8.dp)
-                    )
-
-                }
-
-                // icon and temp
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier
-                        .width(96.dp)
-                        .fillMaxHeight()
-                ) {
-                    GlideImage(
-                        model = weather.icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(72.dp)
-                    )
-                    Spacer(Modifier.height(15.dp))
-                    Row {
-                        Text(
-                            text = temp,
-                            fontSize = 24.sp,
-                            color = Color.White,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = unit,
-                            fontSize = 14.sp,
-                            color = Color.White,
-                            fontWeight = FontWeight.Normal,
-                            modifier = Modifier
-                                .align(Alignment.Top)
-                                .padding(4.dp)
-                        )
-                    }
-                }
-            }
-        }*/
 fun FavoriteLocationItem(
     weather: CurrentWeather,
     onNavigateToWeatherDetails: (Int) -> Unit,
     appUnit: String
 ) {
     val unit = LocalContext.current.getTempUnitSymbol(appUnit)
+    Log.i("TAG", "FavoriteLocationItem: ${weather.temp}")
     val temp =
-        weather.unit.convertTemp(weather.temp.toDouble(), appUnit).toInt().toLocalizedNumber()
+        weather.unit.convertTemp((weather.temp.convertArabicToEnglishNumbers().toDouble()), appUnit).toInt().toLocalizedNumber()
 
     Box(
         modifier = Modifier
@@ -415,8 +325,7 @@ fun FavoriteLocationItem(
             .shadow(6.dp, shape = RoundedCornerShape(24.dp))
             .background(
                 brush = Brush.verticalGradient(
-//                    colors = listOf(Color(0xFF1E1F1C), Color(0xFF151513)) // New dark gradient
-                    colors = listOf(Color(0xFF2A2B26), Color(0xFF1E1F1C)) // Brighter & balanced
+                    colors = listOf(Color(0xFF2A2B26), Color(0xFF1E1F1C))
                 ),
                 shape = RoundedCornerShape(24.dp)
             )
@@ -428,7 +337,7 @@ fun FavoriteLocationItem(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = weather.country.getCountryNameFromCode() ?: "N/A",
+                    text = weather.country.getCountryNameFromCode() ?: stringResource(R.string.unknown),
                     fontSize = 14.sp,
                     color = Color(0xFF808080),
                     fontWeight = FontWeight.Medium,
@@ -445,7 +354,7 @@ fun FavoriteLocationItem(
                 )
 
                 Text(
-                    text = weather.description.replaceFirstChar { it.uppercaseChar() },
+                    text = weather.description.translateWeatherDescription(),
                     fontSize = 16.sp,
                     color = Color.White.copy(alpha = 0.85f),
                     fontWeight = FontWeight.Medium,
@@ -461,7 +370,7 @@ fun FavoriteLocationItem(
                         )
                     ),
                     fontSize = 12.sp,
-                    color = Color(0xFF808080).copy(alpha = 0.8f), // Softer gray for last update
+                    color = Color(0xFF808080).copy(alpha = 0.8f),
                     fontWeight = FontWeight.Normal,
                     modifier = Modifier.padding(top = 6.dp)
                 )
