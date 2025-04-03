@@ -39,12 +39,13 @@ import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.delighted2wins.climify.R
 import com.delighted2wins.climify.domainmodel.CurrentWeather
+import com.delighted2wins.climify.features.details.BackButton
 import com.delighted2wins.climify.utils.convertTemp
 import com.delighted2wins.climify.utils.convertWindSpeed
 import com.delighted2wins.climify.utils.getTempUnitSymbol
 import com.delighted2wins.climify.utils.getWindSpeedUnitSymbol
 import com.delighted2wins.climify.utils.toLocalizedNumber
-import com.delighted2wins.climify.features.details.BackButton
+import com.delighted2wins.climify.utils.translateWeatherDescription
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
@@ -61,7 +62,6 @@ fun DisplayCurrentWeather(
     val unit: String
     val windSpeedValue: String
     val windSpeedUnit: String
-
     if (isLocal) {
         unit = context.getTempUnitSymbol(appUnit)
         windSpeedUnit = context.getWindSpeedUnitSymbol(appUnit)
@@ -73,7 +73,7 @@ fun DisplayCurrentWeather(
                 .toLocalizedNumber()
     } else {
         temp = currentWeather.temp
-        unit = context.getTempUnitSymbol(currentWeather.unit)
+        unit = context.getTempUnitSymbol(appUnit)
         windSpeedUnit = context.getWindSpeedUnitSymbol(currentWeather.unit)
         windSpeedValue = currentWeather.windSpeed.toInt().toLocalizedNumber()
     }
@@ -81,6 +81,7 @@ fun DisplayCurrentWeather(
     val pressure = currentWeather.pressure.trim().toInt().toLocalizedNumber()
     val cloud = currentWeather.cloud.trim().toInt().toLocalizedNumber()
     val humidity = currentWeather.humidity.trim().toInt().toLocalizedNumber()
+
 
     Box(
         modifier = Modifier
@@ -235,7 +236,7 @@ fun DisplayCurrentWeather(
             }
             // Description
             Text(
-                text = currentWeather.description,
+                text = currentWeather.description.translateWeatherDescription(),
                 fontSize = 20.sp,
                 color = Color.White,
                 fontWeight = FontWeight.Medium

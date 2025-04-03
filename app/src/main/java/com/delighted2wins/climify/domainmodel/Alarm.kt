@@ -9,5 +9,6 @@ data class Alarm(
     val tag: String,
     val startDuration: Long,
     val endDuration: Long,
-    val type: String
+    var type: String,
+    var isChecked: Boolean = true
 )

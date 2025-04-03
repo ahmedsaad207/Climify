@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -66,6 +65,7 @@ import com.delighted2wins.climify.navigation.Screen
 import com.delighted2wins.climify.navigation.SetupNavHost
 import com.delighted2wins.climify.service.WeatherUpdateService
 import com.delighted2wins.climify.utils.Constants
+import com.delighted2wins.climify.utils.checkIfLangFromAppOrSystem
 import com.delighted2wins.climify.utils.updateAppLanguage
 import com.google.android.libraries.places.api.Places
 import com.google.gson.Gson
@@ -77,22 +77,20 @@ class MainActivity : ComponentActivity() {
 
         val viewModel =
             ViewModelProvider(this, AppViewModelFactory(getRepo(this)))[AppViewModel::class.java]
-        val lang = viewModel.getData(Constants.KEY_LANG) as Language
+        val lang = viewModel.getData(Constants.KEY_LANG) as Language //
 
         if (!Places.isInitialized()) {
             Places.initialize(this.applicationContext, BuildConfig.PlacesApiKey)
         }
         var notificationWeather: CurrentWeather? = null
 
-        updateAppLanguage(lang.value)
+        updateAppLanguage(checkIfLangFromAppOrSystem(lang))
 
         intent?.let { intent ->
             val json = intent.getStringExtra(Constants.KEY_CURRENT_WEATHER)
             json?.let {
                 val alarm =
                     Gson().fromJson(intent.getStringExtra(Constants.KEY_ALARM), Alarm::class.java)
-                Log.i("TAG", "onCreate: alarm Tag: ${alarm.tag}")
-                viewModel.deleteAlarm(alarm)
 
                 notificationWeather = Gson().fromJson(json, CurrentWeather::class.java)
                 val stopServiceIntent =
@@ -145,21 +143,24 @@ class MainActivity : ComponentActivity() {
                                 .size(64.dp)
                                 .background(
                                     brush = Brush.verticalGradient(
-                                        colors = listOf(colorResource(R.color.deep_purple), colorResource(R.color.dark_violet))
+                                        colors = listOf(
+                                            colorResource(R.color.deep_purple),
+                                            colorResource(R.color.dark_violet)
+                                        )
                                     ),
                                     shape = CircleShape
                                 )
                                 .shadow(8.dp, shape = CircleShape)
                                 .clickable {
-                                    when (navController.currentDestination?.route?.substringAfterLast(".")
+                                    when (navController.currentDestination?.route?.substringAfterLast(
+                                        "."
+                                    )
                                         ?: "") {
                                         Screen.Alarm::class.simpleName -> {
-                                            Log.i("TAG", "Alarm clicked: ")
                                             fabAction.value.invoke()
                                         }
 
                                         Screen.Favorite::class.simpleName -> {
-                                            Log.i("TAG", "Favorite clicked: ")
                                             navController.navigate(Screen.LocationSelection(true))
                                             showFloatingActionButton.value = false
                                         }
@@ -199,7 +200,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// blue design
 @Composable
 fun BottomNavigationBar(
     navController: NavHostController,
@@ -286,7 +286,7 @@ fun BottomNavigationBar(
                                     Brush.verticalGradient(
                                         colors = listOf(
                                             colorResource(R.color.neutral_gray),
-                                            colorResource(R.color.grayish_green )
+                                            colorResource(R.color.grayish_green)
                                         )
                                     ),
                                     shape = RoundedCornerShape(30.dp)
@@ -312,7 +312,4 @@ data class NavigationItem(
     var icon: ImageVector,
     val route: Screen
 )
-
-
-
 

@@ -20,7 +20,6 @@ fun DisplayHomeData(
     onNavigateToLocationSelection: (Boolean) -> Unit = {},
     forecastHours: List<ForecastWeather>,
     forecastDays: List<ForecastWeather>,
-    isOnline: Boolean = true,
     backButton: Boolean = false,
     appUnit: String,
     onNavigateBack: () -> Unit = {}
@@ -39,30 +38,15 @@ fun DisplayHomeData(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (isOnline) {
-                DisplayCurrentWeather(
-                    onNavigateToLocationSelection,
-                    currentWeather,
-                    backButton,
-                    onNavigateBack,
-                    appUnit = appUnit
-                )
-                DisplayHourlyWeathers(forecastHours)
-                DisplayUpcomingWeathers(forecastDays)
-            } else {
-                DisplayCurrentWeather(
-                    onNavigateToLocationSelection,
-                    currentWeather,
-                    backButton,
-                    onNavigateBack,
-                    true,
-                    appUnit = appUnit
-                )
-                DisplayHourlyWeathers(forecastHours)
-                DisplayUpcomingWeathers(forecastDays)
-            }
+            DisplayCurrentWeather(
+                onNavigateToLocationSelection,
+                currentWeather,
+                backButton,
+                onNavigateBack,
+                appUnit = appUnit
+            )
+            DisplayHourlyWeathers(forecastHours)
+            DisplayUpcomingWeathers(forecastDays)
         }
-
-
     }
 }

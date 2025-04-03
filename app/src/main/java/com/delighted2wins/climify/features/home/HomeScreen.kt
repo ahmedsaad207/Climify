@@ -10,6 +10,8 @@ import android.location.LocationManager
 import android.net.Uri
 import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -20,7 +22,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -38,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -53,7 +59,6 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.delighted2wins.climify.R
-import com.delighted2wins.climify.domainmodel.Response
 import com.delighted2wins.climify.data.local.db.AlarmsLocalDataSourceImpl
 import com.delighted2wins.climify.data.local.db.WeatherDatabase
 import com.delighted2wins.climify.data.local.db.WeathersLocalDataSourceImpl
@@ -62,12 +67,15 @@ import com.delighted2wins.climify.data.remote.RetrofitClient
 import com.delighted2wins.climify.data.remote.WeatherRemoteDataSourceImpl
 import com.delighted2wins.climify.data.repo.WeatherRepositoryImpl
 import com.delighted2wins.climify.domainmodel.CurrentWeather
+import com.delighted2wins.climify.domainmodel.Response
+import com.delighted2wins.climify.enums.Language
 import com.delighted2wins.climify.enums.LocationSource
 import com.delighted2wins.climify.enums.TempUnit
 import com.delighted2wins.climify.features.home.components.DisplayHomeData
 import com.delighted2wins.climify.features.home.components.LoadingIndicator
 import com.delighted2wins.climify.utils.Constants
 import com.delighted2wins.climify.utils.NetworkManager
+import com.delighted2wins.climify.utils.checkIfLangFromAppOrSystem
 import com.delighted2wins.climify.utils.getUserLocationUsingGps
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.launch
@@ -82,6 +90,7 @@ fun HomeUi(
     var flag = true
     showBottomNabBar.value = true
     val context = LocalContext.current
+    val activity = LocalActivity.current
     val scope = rememberCoroutineScope()
     var hasPermission by remember { mutableStateOf(false) }
     var latLng by remember { mutableStateOf<LatLng?>(null) }
@@ -95,9 +104,15 @@ fun HomeUi(
     val isOnline by networkManager.observeNetworkChanges()
         .collectAsStateWithLifecycle(networkManager.isNetworkAvailable())
 
+    BackHandler {
+        activity?.finish()
+    }
+
     LaunchedEffect(isOnline) {
         val message =
-            if (isOnline) (if (flag) "" else "Your Internet connection has been restored.") else "You are currently offline."
+            if (isOnline) (if (flag) "" else context.getString(R.string.your_internet_connection_has_been_restored)) else context.getString(
+                R.string.you_are_currently_offline
+            )
         if (message.isNotBlank()) {
             flag = false
             scope.launch {
@@ -177,8 +192,10 @@ private fun FetchData(
     onNavigateToLocationSelection: (Boolean) -> Unit,
     unit: String
 ) {
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
-        viewModel.fetchWeatherData(lat, lon, isOnline)
+        val lang = viewModel.getData<Language>(Constants.KEY_LANG)
+        viewModel.fetchWeatherData(lat, lon, context.checkIfLangFromAppOrSystem(lang), isOnline)
     }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -189,27 +206,14 @@ private fun FetchData(
         is Response.Success -> {
             val (currentWeather, forecastHours, forecastDays) = (uiState as Response.Success).data
 
-            if (isOnline) {
-                // data from request
-                DisplayHomeData(
-                    currentWeather!!,
-                    onNavigateToLocationSelection,
-                    forecastHours,
-                    forecastDays,
-                    appUnit = unit
-                )
-            } else {
-                // local data
-                DisplayHomeData(
-                    currentWeather!!,
-                    onNavigateToLocationSelection,
-                    currentWeather.hoursForecast,
-                    currentWeather.daysForecast,
-                    appUnit = unit,
-                    isOnline = false
-                )
-            }
-
+            // data from request
+            DisplayHomeData(
+                currentWeather!!,
+                onNavigateToLocationSelection,
+                forecastHours,
+                forecastDays,
+                appUnit = unit
+            )
         }
 
         is Response.Failure -> {
@@ -332,53 +336,80 @@ fun LocationPermissionHandler(onPermissionGranted: () -> Unit) {
         ) {
             if (!hasPermission) {
                 // Permission Request
-                Button(onClick = {
-                    requestPermissionLauncher.launch(
-                        arrayOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                        )
-                    )
-                }) {
-                    // TODO request permission
-                    Text("Request Location Permission")
+                if (!permanentlyDenied) {
+                    Button(
+                        onClick = {
+                            requestPermissionLauncher.launch(
+                                arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                            )
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.vivid_red)),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .wrapContentWidth()
+                            .height(56.dp)
+                    ) {
+                        Text(stringResource(R.string.request_location_permission), fontSize = 18.sp)
+                    }
                 }
 
+                Spacer(Modifier.height(8.dp))
                 if (showRationale) { // first deny
                     Text(
-                        "Location permission is needed for weather updates.",
+                        stringResource(R.string.location_permission_is_needed_for_weather_updates),
                         color = Color.Red,
                         modifier = Modifier.padding(8.dp)
                     )
                 }
 
                 if (permanentlyDenied) {
+
+                    Button(
+                        onClick = {
+                            val intent =
+                                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    data = Uri.fromParts("package", context.packageName, null)
+                                }
+                            context.startActivity(intent)
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.vivid_red)),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .wrapContentWidth()
+                            .height(56.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.open_settings), fontSize = 18.sp
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
                     Text(
-                        "Permission permanently denied. Enable it from Settings.",
+                        stringResource(R.string.permission_permanently_denied_enable_it_from_settings),
                         color = Color.Red,
                         modifier = Modifier.padding(8.dp)
                     )
-                    Button(onClick = {
-                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                            data = Uri.fromParts("package", context.packageName, null)
-                        }
-                        context.startActivity(intent)
-                    }) {
-                        Text("Open Settings")
-                    }
                 }
             } else if (!isGpsEnabled) {
                 // GPS Enable Request
                 Text(
-                    "Location services are disabled. Please enable GPS.",
+                    stringResource(R.string.location_services_are_disabled_please_enable_gps),
                     color = Color.Red,
                     modifier = Modifier.padding(8.dp)
                 )
                 Button(onClick = {
                     val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
                     context.startActivity(intent)
-                }) {
-                    Text("Enable GPS")
+
+                },
+                    colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.vivid_red)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .height(56.dp)) {
+                    Text(stringResource(R.string.enable_gps))
                 }
             }
         }

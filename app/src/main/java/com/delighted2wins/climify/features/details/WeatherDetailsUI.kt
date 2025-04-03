@@ -26,13 +26,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.delighted2wins.climify.R
 import com.delighted2wins.climify.domainmodel.Response
+import com.delighted2wins.climify.enums.Language
 import com.delighted2wins.climify.enums.TempUnit
 import com.delighted2wins.climify.features.home.components.DisplayHomeData
 import com.delighted2wins.climify.features.home.components.LoadingIndicator
 import com.delighted2wins.climify.features.home.getRepo
 import com.delighted2wins.climify.utils.Constants
 import com.delighted2wins.climify.utils.NetworkManager
+import com.delighted2wins.climify.utils.checkIfLangFromAppOrSystem
 import kotlinx.coroutines.launch
 
 @Composable
@@ -53,7 +56,8 @@ fun DetailsUI(
     val networkManager = NetworkManager(context)
     val isOnline by networkManager.observeNetworkChanges()
         .collectAsStateWithLifecycle(networkManager.isNetworkAvailable())
-
+    val lang = context.checkIfLangFromAppOrSystem(viewModel.getData<Language>(Constants.KEY_LANG))
+    val unit = viewModel.getData<TempUnit>(Constants.KEY_TEMP_UNIT).value
     LaunchedEffect(Unit) {
         showBottomNabBar.value = false
         showFloatingActionButton.value = false
@@ -62,13 +66,13 @@ fun DetailsUI(
 
     LaunchedEffect(weather) {
         weather?.let {
-            viewModel.fetchWeatherData(it, isOnline = isOnline)
+            viewModel.fetchWeatherData(it, isOnline, unit, lang)
         }
     }
 
     LaunchedEffect(isOnline) {
         val message =
-            if (isOnline) (if (flag) "" else "Your Internet connection has been restored.") else "You are currently offline."
+            if (isOnline) (if (flag) "" else context.getString(R.string.your_internet_connection_has_been_restored)) else context.getString(R.string.you_are_currently_offline)
         if (message.isNotBlank()) {
             flag = false
             scope.launch {
@@ -93,7 +97,6 @@ fun DetailsUI(
                     currentWeather,
                     forecastHours = forecastHours,
                     forecastDays = forecastDays,
-                    isOnline = isOnline,
                     backButton = true,
                     onNavigateBack = onNavigateBack,
                     appUnit = appUnit
@@ -102,14 +105,9 @@ fun DetailsUI(
         }
 
         is Response.Failure -> {
-            if (isOnline) {
                 weather?.let {
-                    viewModel.fetchWeatherData(it, isOnline = false)
+                    viewModel.fetchWeatherData(it, isOnline, unit, lang)
                 }
-            } else {
-                // TODO Error
-            }
-
         }
     }
 

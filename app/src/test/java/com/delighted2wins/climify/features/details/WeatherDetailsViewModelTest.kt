@@ -77,7 +77,7 @@ class WeatherDetailsViewModelTest {
         )
 
         // when
-        viewModel.fetchWeatherData(weather, true)
+        viewModel.fetchWeatherData(weather, true, )
 //        dispatcher.scheduler.advanceUntilIdle()
 
         // then
