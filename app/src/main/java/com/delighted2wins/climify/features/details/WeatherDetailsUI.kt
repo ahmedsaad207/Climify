@@ -99,7 +99,8 @@ fun DetailsUI(
                     forecastDays = forecastDays,
                     backButton = true,
                     onNavigateBack = onNavigateBack,
-                    appUnit = appUnit
+                    appUnit = appUnit,
+                    isOnline = isOnline
                 )
             }
         }

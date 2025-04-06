@@ -40,6 +40,7 @@ import com.bumptech.glide.integration.compose.GlideImage
 import com.delighted2wins.climify.R
 import com.delighted2wins.climify.domainmodel.CurrentWeather
 import com.delighted2wins.climify.features.details.BackButton
+import com.delighted2wins.climify.utils.convertArabicToEnglishNumbers
 import com.delighted2wins.climify.utils.convertTemp
 import com.delighted2wins.climify.utils.convertWindSpeed
 import com.delighted2wins.climify.utils.getTempUnitSymbol
@@ -65,7 +66,7 @@ fun DisplayCurrentWeather(
     if (isLocal) {
         unit = context.getTempUnitSymbol(appUnit)
         windSpeedUnit = context.getWindSpeedUnitSymbol(appUnit)
-        temp = currentWeather.unit.convertTemp(currentWeather.temp.toDouble(), appUnit).toInt()
+        temp = currentWeather.unit.convertTemp(currentWeather.temp.convertArabicToEnglishNumbers().toDouble(), appUnit).toInt()
             .toLocalizedNumber()
 
         windSpeedValue =
@@ -157,7 +158,7 @@ fun DisplayCurrentWeather(
                 )
                 Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.White)
             }
-            if (isLocal) {
+            if (!isLocal) {
                 Text(
                     text = stringResource(R.string.last_update),
                     fontSize = 14.sp,

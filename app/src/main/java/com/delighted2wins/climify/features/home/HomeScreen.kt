@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.net.Uri
 import android.provider.Settings
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
@@ -74,9 +75,9 @@ import com.delighted2wins.climify.enums.TempUnit
 import com.delighted2wins.climify.features.home.components.DisplayHomeData
 import com.delighted2wins.climify.features.home.components.LoadingIndicator
 import com.delighted2wins.climify.utils.Constants
+import com.delighted2wins.climify.utils.LocationHelper
 import com.delighted2wins.climify.utils.NetworkManager
 import com.delighted2wins.climify.utils.checkIfLangFromAppOrSystem
-import com.delighted2wins.climify.utils.getUserLocationUsingGps
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.launch
 
@@ -93,10 +94,11 @@ fun HomeUi(
     val activity = LocalActivity.current
     val scope = rememberCoroutineScope()
     var hasPermission by remember { mutableStateOf(false) }
-    var latLng by remember { mutableStateOf<LatLng?>(null) }
+    var showData by remember { mutableStateOf<Boolean?>(null) }
+    var latLng by remember { mutableStateOf(LatLng(0.0, 0.0)) }
     val lifecycleOwner = LocalLifecycleOwner.current
     val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-
+    val locationHelper = LocationHelper(context)
     val viewModel: HomeViewModel = viewModel(
         factory = HomeViewModelFactory(getRepo(context))
     )
@@ -118,9 +120,7 @@ fun HomeUi(
             scope.launch {
                 snackBarHostState.currentSnackbarData?.dismiss()
                 snackBarHostState.showSnackbar(
-                    message,
-                    null,
-                    duration = SnackbarDuration.Short
+                    message, null, duration = SnackbarDuration.Short
                 )
             }
         }
@@ -129,6 +129,7 @@ fun HomeUi(
     val userLocation = viewModel.getData<LocationSource>(Constants.KEY_LOCATION_SOURCE)
     val unit = viewModel.getData<TempUnit>(Constants.KEY_TEMP_UNIT).value
     val (lat, lon) = viewModel.getData<Pair<Double, Double>>("")
+
     if (notificationWeather != null) {
         FetchData(
             notificationWeather.lat,
@@ -139,24 +140,35 @@ fun HomeUi(
             unit
         )
 
-    } else if (userLocation == LocationSource.MAP && lat != 0.0 && lon != 0.0) {
+    }
+    else if (userLocation == LocationSource.MAP && lat != 0.0 && lon != 0.0) {
         FetchData(lat, lon, viewModel, isOnline, onNavigateToLocationSelection, unit)
-    } else {
-        LocationPermissionHandler {
+    }
+    else {
+        if (!hasPermission) LocationPermissionHandler {
             hasPermission = true
         }
-
         if (hasPermission) {
-            context.getUserLocationUsingGps { gpsLat, gpsLlon ->
-                latLng = LatLng(gpsLat, gpsLlon)
+            locationHelper.getLocationCoordinates { location ->
+                location?.let {
+                    latLng = it
+                    viewModel.saveData(Pair(latLng.latitude, latLng.longitude))
+                    showData = true
+                } ?: run {
+                    Log.e("TAG", "Failed to retrieve location.")
+                }
             }
         }
     }
 
-    latLng?.let {
+  if (userLocation == LocationSource.GPS && hasLocationPermission(context) && hasEnabledLocationService(locationManager)) {
+        LoadingIndicator()
+    }
+
+    showData?.let {
         FetchData(
-            it.latitude,
-            it.longitude,
+            latLng.latitude,
+            latLng.longitude,
             viewModel,
             isOnline,
             onNavigateToLocationSelection,
@@ -166,21 +178,18 @@ fun HomeUi(
 
     LaunchedEffect(Unit) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            val locationEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-            val hasFineLocationPermission = ContextCompat.checkSelfPermission(
-                context, Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-
-            val hasCoarseLocationPermission = ContextCompat.checkSelfPermission(
-                context, Manifest.permission.ACCESS_COARSE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-
-            if (locationEnabled && (hasFineLocationPermission || hasCoarseLocationPermission)) {
-                hasPermission = true
-            }
+            if (hasLocationPermission(context) && hasEnabledLocationService(locationManager)) hasPermission = true
+            else if (hasLocationPermission(context)) hasPermission = false
         }
-
     }
+}
+
+private fun hasLocationPermission(context: Context): Boolean {
+    return ContextCompat.checkSelfPermission(
+        context, Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
+        context, Manifest.permission.ACCESS_COARSE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
 }
 
 @Composable
@@ -190,7 +199,7 @@ private fun FetchData(
     viewModel: HomeViewModel,
     isOnline: Boolean,
     onNavigateToLocationSelection: (Boolean) -> Unit,
-    unit: String
+    unit: String,
 ) {
     val context = LocalContext.current
     LaunchedEffect(Unit) {
@@ -212,7 +221,8 @@ private fun FetchData(
                 onNavigateToLocationSelection,
                 forecastHours,
                 forecastDays,
-                appUnit = unit
+                appUnit = unit,
+                isOnline = isOnline
             )
         }
 
@@ -253,17 +263,13 @@ private fun FetchData(
 }
 
 fun getRepo(context: Context) = WeatherRepositoryImpl(
-    WeatherRemoteDataSourceImpl(RetrofitClient.service),
-    WeathersLocalDataSourceImpl(
+    WeatherRemoteDataSourceImpl(RetrofitClient.service), WeathersLocalDataSourceImpl(
         WeatherDatabase.getInstance(context.applicationContext).getWeatherDao()
-    ),
-    AlarmsLocalDataSourceImpl(
+    ), AlarmsLocalDataSourceImpl(
         WeatherDatabase.getInstance(context.applicationContext).getWeatherDao()
-    ),
-    PreferencesDataSourceImpl(
+    ), PreferencesDataSourceImpl(
         context.getSharedPreferences(
-            Constants.PREF_NAME,
-            Context.MODE_PRIVATE
+            Constants.PREF_NAME, Context.MODE_PRIVATE
         )
     )
 )
@@ -290,8 +296,8 @@ fun LocationPermissionHandler(onPermissionGranted: () -> Unit) {
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        val granted =
+            permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true || permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
 
         hasPermission = granted
 
@@ -302,8 +308,7 @@ fun LocationPermissionHandler(onPermissionGranted: () -> Unit) {
             }
         } else {
             showRationale = ActivityCompat.shouldShowRequestPermissionRationale(
-                activity,
-                Manifest.permission.ACCESS_FINE_LOCATION
+                activity, Manifest.permission.ACCESS_FINE_LOCATION
             )
             permanentlyDenied = !showRationale
         }
@@ -399,19 +404,30 @@ fun LocationPermissionHandler(onPermissionGranted: () -> Unit) {
                     color = Color.Red,
                     modifier = Modifier.padding(8.dp)
                 )
-                Button(onClick = {
-                    val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-                    context.startActivity(intent)
+                Button(
+                    onClick = {
+                        requestLocationService(context)
 
-                },
+                    },
                     colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.vivid_red)),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .wrapContentWidth()
-                        .height(56.dp)) {
+                        .height(56.dp)
+                ) {
                     Text(stringResource(R.string.enable_gps))
                 }
             }
         }
     }
+}
+
+private fun requestLocationService(context: Context) {
+    val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+    context.startActivity(intent)
+}
+
+private fun hasEnabledLocationService(locationManager: LocationManager): Boolean {
+    val locationEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+    return locationEnabled
 }

@@ -1,6 +1,7 @@
 package com.delighted2wins.climify.features.location
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -56,7 +57,6 @@ import com.delighted2wins.climify.features.home.getRepo
 import com.delighted2wins.climify.utils.Constants
 import com.delighted2wins.climify.utils.NetworkManager
 import com.delighted2wins.climify.utils.getCountryNameFromCode
-import com.delighted2wins.climify.utils.getUserLocationUsingGps
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -171,6 +171,8 @@ private fun OnlineMode(
 
     if (isMapReady) {
         ShowMap(
+            context,
+            scope,
             isFavorite,
             viewModel,
             onNavigateToHome
@@ -182,33 +184,34 @@ private fun OnlineMode(
 
 @Composable
 private fun ShowMap(
+    context: Context,
+    scope: CoroutineScope,
     isFavorite: Boolean,
     viewModel: LocationSelectionViewModel,
     onNavigate: () -> Unit
 ) {
-
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-    var savedLocation by remember { mutableStateOf(LatLng(0.0, 0.0)) }
-
     val (lat, lon) = viewModel.getData<Pair<Double, Double>>("LOCATION")
+    val savedLocation by remember { mutableStateOf(LatLng(lat, lon)) }
     val userLocation = viewModel.getData<LocationSource>(Constants.KEY_LOCATION_SOURCE)
     val cities = viewModel.predictions.collectAsStateWithLifecycle()
     val selectedLocation = viewModel.currentLocation.collectAsStateWithLifecycle()
     val selectedLatLng by viewModel.selectedLatLng.collectAsStateWithLifecycle()
 
-    if (userLocation == LocationSource.MAP) {
-        savedLocation = if (lat != 0.0 && lon != 0.0) {
-            LatLng(lat, lon)
-        } else {
-            LatLng(31.252321, 29.992283)
-        }
-    } else {
-        context.getUserLocationUsingGps { latitude, longitude ->
-            savedLocation = LatLng(latitude, longitude)
-            viewModel.getLocationInfo(latitude, longitude)
-        }
-    }
+//    LaunchedEffect(Unit) {
+//        if (userLocation == LocationSource.MAP) {
+//            savedLocation = if (lat != 0.0 && lon != 0.0) {
+//                LatLng(lat, lon)
+//            }
+//            else {
+//                LatLng(31.252321, 29.992283)
+//            }
+//        } else {
+//            context.getUserLocationUsingGps { latitude, longitude ->
+//                savedLocation = LatLng(latitude, longitude)
+//                viewModel.getLocationInfo(latitude, longitude)
+//            }
+//        }
+//    }
 
     var predictions by remember { mutableStateOf(emptyList<AutocompletePrediction>()) }
     var input by remember { mutableStateOf("") }
@@ -218,9 +221,10 @@ private fun ShowMap(
     val marker = remember { mutableStateOf(MarkerState(position = savedLocation)) }
 
     LaunchedEffect(Unit) {
-        if (userLocation == LocationSource.MAP) {
             viewModel.getLocationInfo(lat, lon)
-        }
+//        if (userLocation == LocationSource.MAP) {
+//            Log.i("TAG", "ShowMap: ${marker.value.position}")
+//        }
     }
     LaunchedEffect(input) {
         if (input.isBlank()) {
@@ -301,6 +305,7 @@ private fun ShowMap(
         }
 
         if (selectedLocation.value.lat != null && selectedLocation.value.lon != null) {
+            Log.i("TAG", "ShowMap: ${selectedLocation.value.name}")
             val newLat = marker.value.position.latitude
             val newLon = marker.value.position.longitude
             val buttonText = if (isFavorite) {
