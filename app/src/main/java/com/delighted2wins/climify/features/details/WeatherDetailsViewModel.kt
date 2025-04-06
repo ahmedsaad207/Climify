@@ -19,6 +19,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class WeatherDetailsViewModel(private val repository: WeatherRepository) : ViewModel() {
+
+    init {
+
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+    }
     private val _uiState =
         MutableStateFlow<Response<Triple<CurrentWeather, List<ForecastWeather>, List<ForecastWeather>>>>(
             Response.Loading
@@ -37,7 +45,8 @@ class WeatherDetailsViewModel(private val repository: WeatherRepository) : ViewM
     ) {
         if (isOnline) {
             fetchApiData(localWeather, units, lang)
-        } else {
+        }
+        else {
             fetchLocalData(localWeather)
         }
     }
@@ -88,9 +97,11 @@ class WeatherDetailsViewModel(private val repository: WeatherRepository) : ViewM
                     currentWeather.id = localWeather.id
                     currentWeather.hoursForecast = hours
                     currentWeather.daysForecast = days
+                    currentWeather.unit = units
                     repository.updateWeather(currentWeather)
                     _uiState.value = Response.Success(data)
-                } else {
+                }
+                else {
                     _uiState.value = Response.Failure("Failed to fetch data.")
                 }
             } catch (e: Exception) {

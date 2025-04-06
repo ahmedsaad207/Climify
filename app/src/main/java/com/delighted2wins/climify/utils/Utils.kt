@@ -188,7 +188,7 @@ fun Context.getUserLocationUsingGps(onResult: (latitude: Double, longitude: Doub
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
     fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-        onResult(location?.latitude ?: 31.252321, location?.longitude ?: 29.992283)
+        onResult(location?.latitude ?: 0.0, location?.longitude ?: 0.0)
     }.addOnFailureListener {
         onResult(31.252321, 29.992283)
     }

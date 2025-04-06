@@ -92,25 +92,7 @@ class LocationSelectionViewModel(
         val lon = latLng.longitude
 
         viewModelScope.launch {
-            /*try {
-                val currentWeather =
-                    repository.getCurrentWeather(
-                        latLng.latitude,
-                        latLng.longitude,
-                        unit,
-                        lang
-                    )
-                        .map {
-                            it.toCurrentWeather()
-                        }
-                        .onEach { it.unit = unit }
-                        .first()
 
-                repository.insertWeather(currentWeather)
-            }
-            catch (e: Exception) {
-                Log.i("TAG", "insertWeather: Error insert weather: ${e.message}")
-            }*/
             try {
                 val currentWeatherDeferred = async {
                     repository.getCurrentWeather(lat, lon, units, lang)

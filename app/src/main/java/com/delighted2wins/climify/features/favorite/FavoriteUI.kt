@@ -1,6 +1,5 @@
 package com.delighted2wins.climify.features.favorite
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -313,7 +312,6 @@ fun FavoriteLocationItem(
     appUnit: String
 ) {
     val unit = LocalContext.current.getTempUnitSymbol(appUnit)
-    Log.i("TAG", "FavoriteLocationItem: ${weather.temp}")
     val temp =
         weather.unit.convertTemp((weather.temp.convertArabicToEnglishNumbers().toDouble()), appUnit).toInt().toLocalizedNumber()
 

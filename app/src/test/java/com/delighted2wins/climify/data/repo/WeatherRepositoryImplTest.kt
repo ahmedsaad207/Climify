@@ -80,6 +80,7 @@ class WeatherRepositoryImplTest {
         assertTrue(repo.getFavoriteWeathers().first().isNotEmpty())
         assertTrue(repo.getWeatherById(200).toList().isEmpty())
 
+
         // if list is null
         weatherLocal = FakeWeatherLocalDataSource(null)
         repo = WeatherRepositoryImpl(remote, weatherLocal, alarmLocal, preferences)
