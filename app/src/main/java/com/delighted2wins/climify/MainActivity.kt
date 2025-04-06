@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
@@ -83,6 +84,8 @@ class MainActivity : ComponentActivity() {
             Places.initialize(this.applicationContext, BuildConfig.PlacesApiKey)
         }
         var notificationWeather: CurrentWeather? = null
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         updateAppLanguage(checkIfLangFromAppOrSystem(lang))
 
@@ -144,8 +147,8 @@ class MainActivity : ComponentActivity() {
                                 .background(
                                     brush = Brush.verticalGradient(
                                         colors = listOf(
-                                            colorResource(R.color.deep_purple),
-                                            colorResource(R.color.dark_violet)
+                                            Color(0xFFE2AA12),
+                                            Color(0xFF95700B)
                                         )
                                     ),
                                     shape = CircleShape

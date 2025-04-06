@@ -414,8 +414,9 @@ fun AlarmUI(snackBarHostState: SnackbarHostState, onSetAlarm: (() -> Unit) -> Un
                             rememberSwipeToDismissBoxState(confirmValueChange = { dismissValue ->
                                 if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
                                     WorkManager.getInstance(context).cancelAllWorkByTag(alarm.tag)
+                                    viewModel.deleteAlarm(alarm)
                                     if (alarm.startDuration > System.currentTimeMillis()) {
-                                        viewModel.deleteAlarm(alarm)
+
                                         scope.launch {
                                             snackBarHostState.currentSnackbarData?.dismiss()
                                             val result = snackBarHostState.showSnackbar(

@@ -22,7 +22,8 @@ fun DisplayHomeData(
     forecastDays: List<ForecastWeather>,
     backButton: Boolean = false,
     appUnit: String,
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    isOnline: Boolean
 ) {
 
     Box {
@@ -43,7 +44,8 @@ fun DisplayHomeData(
                 currentWeather,
                 backButton,
                 onNavigateBack,
-                appUnit = appUnit
+                appUnit = appUnit,
+                isLocal = isOnline
             )
             DisplayHourlyWeathers(forecastHours)
             DisplayUpcomingWeathers(forecastDays)
