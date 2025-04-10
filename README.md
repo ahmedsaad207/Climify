@@ -57,9 +57,11 @@ Here are some screenshots of the **Climify** app:
 <img src="https://github.com/user-attachments/assets/69eadd86-425a-4b51-8e28-975230866beb" width="300"/>
 <img src="https://github.com/user-attachments/assets/0fa9bb82-415c-4e9b-a36a-f06c96a4d95d" width="300"/>
 <img src="https://github.com/user-attachments/assets/a82b5644-8f6b-4d91-a1a5-858e4c6f72c8" width="300"/>
-<img src="https://github.com/user-attachments/assets/0dd458dc-cd12-4fbd-919d-a53d17179d99" width="300"/>
-<img src="https://github.com/user-attachments/assets/e85a81c1-60dd-4df1-b26b-3ca8fcd50788" width="300"/>
 <img src="https://github.com/user-attachments/assets/ba8d183f-5f94-4d0e-88aa-8080698a2838" width="300"/>
+<img src="https://github.com/user-attachments/assets/0dd458dc-cd12-4fbd-919d-a53d17179d99" width="300"/>
+<img src="https://github.com/user-attachments/assets/58d2276d-ff6f-4a01-b9c0-20c291bbdc9b" width="300"/>
+
+
 
 ## Testing
 
